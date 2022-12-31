@@ -1,0 +1,81 @@
+name: Check PR and Deploy staging
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+env:
+  JDK_DISTRIBUTION: 'temurin'
+  JAVA_VERSION: '17'
+  COMMON_GRADLE_ARGS: --info
+  COMPUTE_ZONE: europe-west3
+  REGISTRY: ghcr.io
+  ENVIRONMENT: staging
+  IMAGE_REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+jobs:
+  compile-code:
+    name: Lint, analyze and compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Java Development Kit (JDK)
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JDK_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+      - name: Cache Sonar
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Gradle wrapper validation
+        uses: gradle/wrapper-validation-action@v1
+      - name: Compile code
+        run: ./gradlew clean ktlintCheck build ${{ env.COMMON_GRADLE_ARGS }}
+      - name: Push code to Sonarqube
+        run: ./gradlew sonarqube ${{ env.COMMON_GRADLE_ARGS }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  deploy-staging:
+    needs: compile-code
+    name: Build image and deploy to staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@v3
+      - name: Set up Java Development Kit (JDK)
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ env.JDK_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+      - name: Get latest tag that follows semantic versioning
+        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
+        id: get-latest-tag
+        with:
+          semver_only: true
+          with_initial_version: true
+          initial_version: 0.0.1
+      - name: Bump semantic version
+        uses: actions-ecosystem/action-bump-semver@v1
+        id: bump-semver
+        with:
+          current_version: ${{ steps.get-latest-tag.outputs.tag }}
+          level: minor
+      - name: Create Release
+        uses: marvinpinto/action-automatic-releases@v1.2.1
+        with:
+          repo_token: ${{ secrets.REGISTRY_TOKEN }}
+          automatic_release_tag: ${{ steps.bump-semver.outputs.new_version }}
+          prerelease: false
+          title: ${{ steps.bump-semver.outputs.new_version }}
+      - name: Build image/buildpack and push it to GitHub registry (GHCR)
+        run: ./gradlew bootBuildImage
+        env:
+          IMAGE_ADDITIONAL_TAGS: ${{ github.sha }},${{ steps.bump-semver.outputs.new_version }}
