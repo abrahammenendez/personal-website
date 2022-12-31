@@ -1,0 +1,75 @@
+name: Deploy production
+on:
+  workflow_dispatch:
+  release:
+    types: [ published ]
+env:
+  JDK_DISTRIBUTION: 'temurin'
+  JAVA_VERSION: '17'
+  COMMON_GRADLE_ARGS: --info --build-cache
+  COMPUTE_ZONE: europe-west3
+  REGISTRY: ghcr.io
+  ENVIRONMENT: production
+jobs:
+  compile-code:
+    name: Lint, analyze and compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+      - name: Set up Java Development Kit (JDK)
+        uses: actions/setup-java@master
+        with:
+          distribution: ${{ env.JDK_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+          check-latest: true
+      - name: Cache Gradle
+        uses: actions/cache@master
+        with:
+          path: ./build-cache
+          key: build-cache
+      - name: Cache Snyk
+        uses: actions/cache@master
+        with:
+          path: ~/.snyk/cache
+          key: ${{ runner.os }}-snyk
+          restore-keys: ${{ runner.os }}-snyk
+      - name: Cache Sonar
+        uses: actions/cache@master
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Gradle wrapper validation
+        uses: gradle/wrapper-validation-action@master
+      - name: Compile code
+        run: ./gradlew clean ktlintCheck build sonarqube ${{ env.COMMON_GRADLE_ARGS }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  deploy-production:
+    name: Build image and deploy to staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+      - name: Set version as an environment variable
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Cache Gradle
+        uses: actions/cache@master
+        with:
+          path: ./build-cache
+          key: build-cache
+      - name: Set up Java Development Kit (JDK)
+        uses: actions/setup-java@master
+        with:
+          distribution: ${{ env.JDK_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+          check-latest: true
+      - name: Build image/buildpack
+        run: ./gradlew bootBuildImage ${{ env.COMMON_GRADLE_ARGS }} --imageName ${{ env.REGISTRY}}/${{ github.repository }/${{ env.ENVIRONMENT }}/:${{ env.RELEASE_VERSION }} --publishImage -PregistryUrl=${{ env.REGISTRY}} -PregistryUsername=${{ github.actor }} -PregistryToken=${{ secrets.REGISTRY_TOKEN }}
