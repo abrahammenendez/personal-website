@@ -1,0 +1,30 @@
+name: Verify IaC
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Format and validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: iac
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version_file: 'iac/.opentofu-version'
+          tofu_wrapper: false
+      - name: Check formatting
+        run: tofu fmt -check -recursive
+      # -backend=false keeps this job credential-free, so it can gate pull
+      # requests without handing them access to state.
+      - name: Install providers
+        run: tofu init -backend=false
+      - name: Validate
+        run: tofu validate

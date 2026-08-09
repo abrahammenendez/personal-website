@@ -1,0 +1,69 @@
+name: Generate IaC
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  generate:
+    name: Generate resources and import blocks
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+    defaults:
+      run:
+        working-directory: iac
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version_file: 'iac/.opentofu-version'
+          tofu_wrapper: false
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: 'stable'
+      - name: Install cf-terraforming
+        run: go install github.com/cloudflare/cf-terraforming/cmd/cf-terraforming@v0.28.0
+      # cf-terraforming reads the provider schema by running tofu, which refuses
+      # to work where a backend is declared but uninitialised. Generation only
+      # reads the Cloudflare API, so it gets a backend-free directory instead.
+      - name: Prepare provider schema
+        run: |
+          mkdir -p "$RUNNER_TEMP/schema"
+          cp versions.tf "$RUNNER_TEMP/schema/"
+          tofu -chdir="$RUNNER_TEMP/schema" init
+      - name: Generate
+        # cf-terraforming skips building its API client when CI is "true", a hook
+        # for the HTTP mocking in its own test suite. Every runner sets CI, so
+        # without this the first request dereferences a nil client.
+        env:
+          CI: 'false'
+        run: |
+          for resource in cloudflare_dns_record cloudflare_ruleset; do
+            cf-terraforming generate \
+              --resource-type "$resource" \
+              --zone "$CLOUDFLARE_ZONE_ID" \
+              --terraform-binary-path "$(command -v tofu)" \
+              --terraform-install-path "$RUNNER_TEMP/schema" \
+              > "generated-$resource.tf"
+            cf-terraforming import \
+              --modern-import-block \
+              --resource-type "$resource" \
+              --zone "$CLOUDFLARE_ZONE_ID" \
+              --terraform-binary-path "$(command -v tofu)" \
+              --terraform-install-path "$RUNNER_TEMP/schema" \
+              > "generated-$resource-imports.tf"
+          done
+      - name: Upload generated configuration
+        uses: actions/upload-artifact@v7
+        with:
+          name: generated-iac
+          path: iac/generated-*.tf
+          retention-days: 7

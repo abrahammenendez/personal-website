@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "personal-website",
+  "compatibility_date": "2026-07-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/server.ts",
+  "routes": [
+    {
+      "pattern": "abrahammenendez.com",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    // This site's canonicals are slash-less. The default, "auto-trailing-slash",
+    // serves each page at `/<slug>/` instead, which would point every canonical
+    // at a redirect. `directory` is set by the Cloudflare Vite plugin.
+    "html_handling": "drop-trailing-slash"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

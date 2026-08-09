@@ -1,0 +1,32 @@
+name: Check PR
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  hygiene:
+    name: Secrets and commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Review hardcoded secrets
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lint commits
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+  verify:
+    name: Verify
+    uses: ./.github/workflows/verify.yaml
+  verify-iac:
+    name: Verify IaC
+    uses: ./.github/workflows/iac-verify.yaml

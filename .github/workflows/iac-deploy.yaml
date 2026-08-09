@@ -1,0 +1,48 @@
+name: Deploy IaC
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'iac/**'
+      - '.github/workflows/iac-deploy.yaml'
+      - '.github/workflows/iac-verify.yaml'
+permissions:
+  contents: read
+concurrency:
+  group: iac-deploy
+  cancel-in-progress: false
+jobs:
+  verify:
+    name: Verify
+    uses: ./.github/workflows/iac-verify.yaml
+  apply:
+    name: Plan and apply
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+    defaults:
+      run:
+        working-directory: iac
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.IAC_TFSTATE_R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.IAC_TFSTATE_R2_SECRET_ACCESS_KEY }}
+      AWS_ENDPOINT_URL_S3: https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_version_file: 'iac/.opentofu-version'
+          tofu_wrapper: false
+      - name: Initialise
+        run: tofu init
+      - name: Plan
+        run: tofu plan -out=tfplan
+      - name: Apply
+        run: tofu apply -auto-approve tfplan

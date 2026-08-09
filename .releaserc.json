@@ -1,0 +1,42 @@
+{
+  "branches": ["main"],
+  "repositoryUrl": "https://github.com/abrahammenendez/personal-website",
+  "tagFormat": "v${version}",
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "breaking": true, "release": "major" },
+          { "type": "feat", "release": "minor" },
+          { "type": "fix", "release": "patch" },
+          { "type": "revert", "release": "patch" },
+          { "type": "chore", "release": "patch" }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            { "type": "feat", "section": "🚀 Features" },
+            { "type": "fix", "section": "🐛 Bug Fixes" },
+            { "type": "revert", "section": "⏪ Reverts" },
+            { "type": "chore", "section": "🧹 Miscellaneous Chores" }
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version",
+        "publishCmd": "gh release create v${nextRelease.version} --title 'v${nextRelease.version}' --notes '${nextRelease.notes}'",
+        "successCmd": "echo ${nextRelease.version} > .new-semantic-release-version"
+      }
+    ]
+  ]
+}

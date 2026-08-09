@@ -1,0 +1,141 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/eb-garamond";
+
+/* `:where` holds `dark:` utilities at zero specificity, so they never outrank
+ * the light utility they pair with. */
+@custom-variant dark (&:where(.dark, .dark *));
+@plugin "@tailwindcss/typography";
+
+/* Every step is an em multiple of --text-body, so the page scales as one,
+ * including max-w-[40em], which resolves against it too. Tailwind's own
+ * --text-xs/sm/base stay available as primitives for src/components/ui/**. */
+@theme {
+  --text-title: 1.5em;
+  --text-title--line-height: 1.15;
+  --text-body: 1.1rem;
+  --text-body--line-height: 1.5;
+  --text-note: 0.95em;
+  --text-meta: 0.8em;
+
+  --font-serif: "EB Garamond Variable", "Hoefler Text", "Times New Roman", serif;
+  --font-sans: "Geist Variable", sans-serif;
+  --font-heading: var(--font-sans);
+
+  /* One colour per link on the home page. */
+  --color-link-job: #d32c3b;
+  --color-link-previous-job: #cc9900;
+  --color-link-history: #e95ea7;
+  --color-link-investment: #28a745;
+  --color-link-oss: #fb6f51;
+  --color-link-social: #2e91fd;
+  --color-link-repos: #8e47f9;
+  --color-link-email: #009688;
+}
+
+/* Colour names are declared twice: `:root`/`.dark` below hold the values, so
+ * one class on <html> reskins the page, and this block registers those names
+ * with Tailwind so utilities like `bg-background` exist. Both halves are
+ * required. */
+@theme inline {
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Every neutral is warm: chroma 0.004 at hue 100 rather than a dead 0 0. The
+ * lightness in each oklch() is what sets the contrast ratios, so anything that
+ * moves it needs those rechecked. */
+:root {
+  color-scheme: light;
+
+  --background: oklch(0.982 0.005 100);
+  --foreground: oklch(0.2178 0.004 100);
+  --card: oklch(0.995 0.004 100);
+  --card-foreground: oklch(0.2178 0.004 100);
+  --popover: oklch(0.995 0.004 100);
+  --popover-foreground: oklch(0.2178 0.004 100);
+  --primary: oklch(0.205 0.004 100);
+  --primary-foreground: oklch(0.985 0.004 100);
+  --secondary: oklch(0.952 0.004 100);
+  --secondary-foreground: oklch(0.205 0.004 100);
+  --muted: oklch(0.952 0.004 100);
+  /* APCA Lc 82. Lightening past ~0.50 drops under Lc 75, the body-text floor. */
+  --muted-foreground: oklch(0.45 0.004 100);
+  --accent: oklch(0.952 0.004 100);
+  --accent-foreground: oklch(0.205 0.004 100);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0.004 100);
+  --input: oklch(0.922 0.004 100);
+  --ring: oklch(0.708 0.004 100);
+  --radius: 0.625rem;
+}
+
+/* Raised surfaces step up in lightness from --background: card and popover by
+ * 0.06, muted/secondary/accent by 0.124. Those gaps are what separate a card
+ * from the page, so keep them if you move the background. */
+.dark {
+  color-scheme: dark;
+
+  --background: oklch(0.2645 0.004 100);
+  --foreground: oklch(0.9612 0.004 100);
+  --card: oklch(0.3245 0.004 100);
+  --card-foreground: oklch(0.9612 0.004 100);
+  --popover: oklch(0.3245 0.004 100);
+  --popover-foreground: oklch(0.9612 0.004 100);
+  --primary: oklch(0.922 0.004 100);
+  --primary-foreground: oklch(0.205 0.004 100);
+  --secondary: oklch(0.3885 0.004 100);
+  --secondary-foreground: oklch(0.9612 0.004 100);
+  --muted: oklch(0.3885 0.004 100);
+  /* APCA Lc 72. Tuned on Lc, not the WCAG ratio, which flatters light-on-dark. */
+  --muted-foreground: oklch(0.84 0.004 100);
+  --accent: oklch(0.3885 0.004 100);
+  --accent-foreground: oklch(0.9612 0.004 100);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0.004 100);
+}
+
+/* Must stay inside `@layer base`: an unlayered rule always beats a layered one
+ * regardless of specificity, so moving `body` out of this block would silently
+ * kill the `bg-background` utility that is meant to win. */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  a {
+    @apply cursor-pointer no-underline hover:underline;
+  }
+}
