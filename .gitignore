@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+.output/
+.vinxi/
+.nitro/
+.tanstack/
+
+# Cloudflare
+.wrangler/
+worker-configuration.d.ts
+
+# OpenTofu, .terraform.lock.hcl stays committed so CI resolves the same providers
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+
+# Test artifacts
+coverage/
+playwright-report/
+blob-report/
+test-results/
+
+# Environment, .env.example stays committed as the documented template
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.local
+.claude/
+.codex/
+
+
