@@ -85,8 +85,8 @@ function Home() {
         <ExternalLink className="text-link-github" href={SITE.social.github}>
           small projects
         </ExternalLink>{' '}
-        whenever I can. Obviously, most of them end up in the graveyard of unfinished stuff. I'm
-        planning to finish something worth talking about this year, so let's keep in touch, OK?
+        whenever I can. Obviously, most of them end up in the graveyard of unfinished stuff. This
+        year, I'm planning to finish something worth talking about, so let's keep in touch, OK?
       </p>
 
       <p>
