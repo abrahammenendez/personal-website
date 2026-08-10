@@ -37,7 +37,7 @@ function Home() {
         <ExternalLink className="text-link-maersk" href="https://www.maersk.com/">
           Maersk
         </ExternalLink>
-        . Before that, I was a Tech Lead at{' '}
+        . Before Maersk, I was a Tech Lead at{' '}
         <ExternalLink
           className="text-link-gorillas"
           href="https://techcrunch.com/2022/12/09/instant-grocery-app-getir-acquires-its-competitor-gorillas/"
