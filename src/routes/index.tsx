@@ -42,7 +42,7 @@ function Home() {
           className="text-link-gorillas"
           href="https://techcrunch.com/2022/12/09/instant-grocery-app-getir-acquires-its-competitor-gorillas/"
         >
-          Gorillas (acq by Getir)
+          Gorillas (acquired by Getir)
         </ExternalLink>
         . You can see the rest on{' '}
         <ExternalLink
