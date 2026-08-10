@@ -25,13 +25,13 @@
   --font-heading: var(--font-sans);
 
   /* One colour per link on the home page. */
-  --color-link-job: #d32c3b;
-  --color-link-previous-job: #cc9900;
-  --color-link-history: #e95ea7;
-  --color-link-investment: #28a745;
-  --color-link-oss: #fb6f51;
-  --color-link-social: #2e91fd;
-  --color-link-repos: #8e47f9;
+  --color-link-maersk: #2e91fd;
+  --color-link-gorillas: #d32c3b;
+  --color-link-linkedin: #cc9900;
+  --color-link-gumroad: #e95ea7;
+  --color-link-exercism: #fb6f51;
+  --color-link-twitter: #28a745;
+  --color-link-github: #8e47f9;
   --color-link-email: #009688;
 }
 

@@ -32,57 +32,57 @@ function Home() {
       </p>
 
       <p>
-        If you've found your way here, you probably already know that I love building software. I'm
-        currently doing it at{' '}
-        <ExternalLink className="text-link-job" href="https://www.maersk.com/">
+        If you've found your way here, you already know that I love building software. Recently,
+        I've done that as a Freelance Backend Engineer at{' '}
+        <ExternalLink className="text-link-maersk" href="https://www.maersk.com/">
           Maersk
-        </ExternalLink>{' '}
-        as a Freelance Backend Engineer. Before that, I was a Tech Lead at{' '}
+        </ExternalLink>
+        . Before that, I was a Tech Lead at{' '}
         <ExternalLink
-          className="text-link-previous-job"
+          className="text-link-gorillas"
           href="https://techcrunch.com/2022/12/09/instant-grocery-app-getir-acquires-its-competitor-gorillas/"
         >
           Gorillas (acquired by Getir)
         </ExternalLink>
-        . You can take a look at{' '}
+        . You can see the rest on{' '}
         <ExternalLink
-          className="text-link-history"
+          className="text-link-linkedin"
           href="https://www.linkedin.com/in/abraham-menendez"
         >
-          my full work history on LinkedIn
+          LinkedIn
         </ExternalLink>
         .
       </p>
 
       <p>
         I'm also a proud small investor in{' '}
-        <ExternalLink className="text-link-investment" href="https://gumroad.com/">
+        <ExternalLink className="text-link-gumroad" href="https://gumroad.com/">
           Gumroad
         </ExternalLink>
-        , an e-commerce platform that makes it incredibly easy for creators to get paid for their
-        work. Feel free to check it out if it piques your interest!
+        , an e-commerce platform that makes it incredibly easy for creators to sell and get paid for
+        their work. Feel free to check it out if it piques your interest!
       </p>
 
       <p>
         As I strongly believe in giving back, you can find me trying to be a helpful Mentor at{' '}
-        <ExternalLink className="text-link-oss" href="https://exercism.com/">
+        <ExternalLink className="text-link-exercism" href="https://exercism.com/">
           Exercism
         </ExternalLink>
         , a not-for-profit organization dedicated to teaching programming to anyone eager to learn.
       </p>
 
       <p>
-        Social media isn't really my thing (too many distractions these days), but I do have a{' '}
-        <ExternalLink className="text-link-social" href={SITE.social.twitter}>
+        Social media isn't really my thing, but I do have a{' '}
+        <ExternalLink className="text-link-twitter" href={SITE.social.twitter}>
           Twitter
         </ExternalLink>{' '}
-        account that I mainly use to retweet other people's opinions. I'm exploring different
-        platforms to share more in-depth thoughts, but I haven't found the right one yet.
+        account. I was off it for years, but lately it's the best place I've found to keep up with
+        everything happening in AI and tech.
       </p>
 
       <p>
         Although I don't have as much spare time as I'd like, I usually try to work on{' '}
-        <ExternalLink className="text-link-repos" href={SITE.social.github}>
+        <ExternalLink className="text-link-github" href={SITE.social.github}>
           small projects
         </ExternalLink>{' '}
         whenever I can. Obviously, most of them end up in the graveyard of unfinished stuff. I'm

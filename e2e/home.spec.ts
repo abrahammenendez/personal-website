@@ -11,7 +11,7 @@ test.describe('home page', () => {
   })
 
   test('opens external links in a new tab', async ({ page }) => {
-    const linkedin = page.getByRole('link', { name: 'my full work history on LinkedIn' })
+    const linkedin = page.getByRole('link', { name: 'LinkedIn' })
 
     await expect(linkedin).toHaveAttribute('target', '_blank')
     await expect(linkedin).toHaveAttribute('rel', /noopener/)
