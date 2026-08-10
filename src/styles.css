@@ -27,10 +27,10 @@
   /* One colour per link on the home page. */
   --color-link-maersk: #2e91fd;
   --color-link-gorillas: #d32c3b;
-  --color-link-linkedin: #cc9900;
+  --color-link-twitter: #cc9900;
   --color-link-gumroad: #e95ea7;
   --color-link-exercism: #fb6f51;
-  --color-link-twitter: #28a745;
+  --color-link-linkedin: #28a745;
   --color-link-github: #8e47f9;
   --color-link-email: #009688;
 }
