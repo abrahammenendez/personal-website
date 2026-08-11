@@ -40,6 +40,13 @@ export const TRANSITION_POWER = 1
  * Served through the Worker from R2, because Workers cap an individual static asset at
  * 25 MiB and the model is larger. The key is content-addressed, so the response can be
  * cached immutably and a new export is simply a new URL.
+ *
+ * **The model stores fp16 weights but computes in fp32**, via `Cast` nodes on its
+ * initializers. Converting the whole graph to fp16 instead halves nothing extra and
+ * silently breaks the output: ONNX Runtime's WebGPU backend miscomputes the Conv1d time
+ * branch in fp16, which measured 1.18 dB SNR against Python Demucs on drums where the
+ * fp32 path measures 26.93 dB. Vocals survives it because that stem is almost entirely
+ * the frequency branch, which is why the damage sounds like bleed rather than silence.
  */
 export const MODEL_URL = '/lab/peelr/model.onnx'
 
