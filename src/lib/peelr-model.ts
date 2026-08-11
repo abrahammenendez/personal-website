@@ -1,11 +1,14 @@
 import { env } from 'cloudflare:workers'
-import { MODEL_URL } from '@/lab/peelr'
+import { MODEL_URL, MODEL_VERSION } from '@/lab/peelr'
 
 /**
- * The R2 key. Content-addressed, so a new export is a new key and the response can be
- * cached forever without any risk of serving a stale model.
+ * The R2 key, carrying the same content hash as the URL.
+ *
+ * Deliberately not named for its precision: the weights are fp16 but the arithmetic is
+ * fp32, and a name like "fp16" invites someone to rebuild it as a whole-graph fp16
+ * model, which corrupts the output on WebGPU. The hash is the identity.
  */
-const MODEL_KEY = 'peelr/htdemucs-split-fp16.onnx'
+const MODEL_KEY = `peelr/htdemucs-split-${MODEL_VERSION}.onnx`
 
 /**
  * Streams peelr's ONNX model out of R2.
