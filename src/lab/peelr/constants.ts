@@ -37,17 +37,28 @@ export const SEGMENT_OVERLAP = 0.25
 export const TRANSITION_POWER = 1
 
 /**
- * Served through the Worker from R2, because Workers cap an individual static asset at
- * 25 MiB and the model is larger. The key is content-addressed, so the response can be
- * cached immutably and a new export is simply a new URL.
+ * First eight hex of the model file's sha256.
+ *
+ * It appears in both the URL the browser fetches and the R2 key behind it, so a new
+ * export is a new URL. That is what makes the immutable cache header safe: without it,
+ * a client that cached a bad model keeps it for a year and replacing the object in R2
+ * changes nothing for them.
  */
-export const MODEL_URL = '/lab/peelr/model.onnx'
+export const MODEL_VERSION = '87bdf3b4'
 
 /**
- * Four stems plus the original, held as float samples, is roughly 127 MB per buffer at
- * this length. Longer inputs exhaust a laptop tab before they finish. See section 7 of
- * the plan.
+ * Served through the Worker from R2, because Workers cap an individual static asset at
+ * 25 MiB and the model is larger.
+ *
+ * **The model stores fp16 weights but computes in fp32**, via `Cast` nodes on its
+ * initializers. Converting the whole graph to fp16 instead halves nothing extra and
+ * silently breaks the output: ONNX Runtime's WebGPU backend miscomputes the Conv1d time
+ * branch in fp16, which measured 1.18 dB SNR against Python Demucs on drums where the
+ * fp32 path measures 26.93 dB. Vocals survives it because that stem is almost entirely
+ * the frequency branch, which is why the damage sounds like bleed rather than silence.
  */
+export const MODEL_URL = `/lab/peelr/model-${MODEL_VERSION}.onnx`
+
 /**
  * ONNX Runtime's own `.wasm` and `.mjs`, served from `public/`. They are static assets
  * rather than bundled ones so the 23 MiB binary never reaches the Worker script, which
@@ -55,6 +66,10 @@ export const MODEL_URL = '/lab/peelr/model.onnx'
  */
 export const ORT_ASSET_PREFIX = '/peelr/ort/'
 
+/**
+ * Four stems plus the original, held as float samples, is roughly 127 MB per buffer at
+ * this length. Longer inputs exhaust a laptop tab before they finish.
+ */
 export const MAX_DURATION_SECONDS = 6 * 60
 
 export const STEMS = ['drums', 'bass', 'other', 'vocals'] as const

@@ -35,7 +35,15 @@ The same three run on every pull request, and again before `apply` on `main`.
 | `CLOUDFLARE_ZONE_ID` | variable | repository |
 
 `CLOUDFLARE_API_TOKEN` is shared with the Worker deploy, so on top of what
-Wrangler needs it carries DNS and single redirect edit rights on this zone.
+Wrangler needs it carries DNS and single redirect edit rights on this zone, plus
+**Workers R2 Storage: Edit** at the account level.
+
+R2 is needed in three separate places, and all three fail with a bare
+`Authentication error [code: 10000]` without it: OpenTofu creating the bucket,
+`wrangler deploy` checking that a bound bucket exists, and uploading the model
+object. Editing an existing token's permissions keeps the same secret, so the
+GitHub secret does not have to be updated.
+
 The R2 keys are S3-compatible credentials for the state bucket, not a
 Cloudflare API token.
 
