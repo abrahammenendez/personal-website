@@ -49,3 +49,6 @@ Thumbs.db
 .codex/
 
 
+
+# Generated from the pinned onnxruntime-web dependency by scripts/copy-ort-assets.mjs
+public/peelr/ort/

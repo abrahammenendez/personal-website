@@ -6,7 +6,9 @@
     "node": ">=24.11.0"
   },
   "scripts": {
+    "predev": "node scripts/copy-ort-assets.mjs",
     "dev": "vite dev --port 3000",
+    "prebuild": "node scripts/copy-ort-assets.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "generate-routes": "tsr generate",
