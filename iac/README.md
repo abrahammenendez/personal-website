@@ -1,9 +1,11 @@
 # iac
 
-The Cloudflare zone for my personal website: its DNS records, and the `www` to
-apex redirect. Anything Workers-shaped stays in
-[`wrangler.jsonc`](../wrangler.jsonc) and is applied by the deploy job, so
-nothing here touches the Worker, its routes, or its custom domain.
+The Cloudflare zone for my personal website: its DNS records, the `www` to apex
+redirect, and the R2 bucket holding peelr's model. Anything Workers-shaped stays
+in [`wrangler.jsonc`](../wrangler.jsonc) and is applied by the deploy job, so
+nothing here touches the Worker, its routes, or its custom domain. The bucket is
+the one exception by necessity: bindings live with the Worker, but the bucket
+they point at has to exist first.
 
 Cloudflare creates a read-only proxied record for every Worker custom domain.
 Those records are deliberately absent from this configuration: OpenTofu only

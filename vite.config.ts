@@ -15,6 +15,14 @@ const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
 
 export default defineConfig({
   resolve: { tsconfigPaths: true },
+  /**
+   * ONNX Runtime loads its own WebAssembly runtime through dynamic imports built from
+   * `env.wasm.wasmPaths`. Pre-bundling rewrites those imports, so Vite then tries to
+   * resolve a file we serve from `public/` as if it were source and fails. Excluding it
+   * also stops the dev server discovering it mid-session and forcing a full reload,
+   * which it does because peelr only imports it lazily.
+   */
+  optimizeDeps: { exclude: ['onnxruntime-web'] },
   plugins: [
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),

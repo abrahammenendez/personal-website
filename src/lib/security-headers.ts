@@ -26,7 +26,12 @@ const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  `script-src 'self' 'unsafe-inline' ${CLOUDFLARE_BEACON_ORIGIN}`,
+  // `wasm-unsafe-eval` is what allows `WebAssembly.instantiate`. It does not permit
+  // `eval`; without it, any WebAssembly module refuses to compile.
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${CLOUDFLARE_BEACON_ORIGIN}`,
+  // Without this, `worker-src` falls back to `script-src`, and Vite starts module
+  // workers from a `blob:` URL, so the worker is blocked outright.
+  "worker-src 'self' blob:",
   STYLE_SRC,
   "img-src 'self' data:",
   "font-src 'self'",
