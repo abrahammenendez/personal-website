@@ -1,6 +1,7 @@
 import { withSentry } from '@sentry/cloudflare'
 import { wrapFetchWithSentry } from '@sentry/tanstackstart-react'
 import handler from '@tanstack/react-start/server-entry'
+import { serveModel } from '@/lib/peelr-model'
 import { applySecurityHeaders } from '@/lib/security-headers'
 import { SENTRY_DSN, SENTRY_ENABLED, SENTRY_TRACES_SAMPLE_RATE } from '@/lib/sentry'
 
@@ -10,6 +11,11 @@ import { SENTRY_DSN, SENTRY_ENABLED, SENTRY_TRACES_SAMPLE_RATE } from '@/lib/sen
  */
 const requestHandlerWithSecurityHeaders = {
   async fetch(request: Request) {
+    // Handled before the router, because this is a large binary from R2 rather than a
+    // page, and it must not pay for a render it will never use.
+    const model = await serveModel(request)
+    if (model) return applySecurityHeaders(model)
+
     const response = await handler.fetch(request)
     return applySecurityHeaders(response)
   },

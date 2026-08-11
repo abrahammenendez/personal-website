@@ -1,3 +1,8 @@
+// Emitted as assets by Vite rather than served from `public/`. ONNX Runtime loads its
+// runtime through a dynamic import, and Vite refuses to resolve a `public/` file as a
+// module, so a URL prefix pointing there fails in development.
+import ortRuntimeUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.mjs?url'
+import ortWasmUrl from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url'
 import type { InferenceSession } from 'onnxruntime-web/webgpu'
 import { BINS, FRAMES, SEGMENT_SAMPLES, STEMS, type Stem } from './constants'
 import { fetchModel } from './model'
@@ -17,9 +22,11 @@ let runModel: RunModel | undefined
  * and from the `webgpu` subpath rather than the package root, whose default export
  * still loads the deprecated JSEP runtime.
  */
-async function init(modelUrl: string, wasmPrefix: string): Promise<void> {
+async function init(modelUrl: string): Promise<void> {
   const ort = await import('onnxruntime-web/webgpu')
-  ort.env.wasm.wasmPaths = wasmPrefix
+  // Explicit per-file overrides rather than a prefix, so the URLs are the hashed ones
+  // Vite emitted and nothing has to be copied into the served directory by hand.
+  ort.env.wasm.wasmPaths = { wasm: ortWasmUrl, mjs: ortRuntimeUrl }
 
   const buffer = await fetchModel(modelUrl, {
     onProgress: ({ loaded, total }) => scope.postMessage({ type: 'download', loaded, total }),
@@ -71,7 +78,7 @@ async function run(left: Float32Array, right: Float32Array): Promise<void> {
 scope.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
   try {
     const request = event.data
-    if (request.type === 'init') await init(request.modelUrl, request.wasmPrefix)
+    if (request.type === 'init') await init(request.modelUrl)
     else if (request.type === 'separate') await run(request.left, request.right)
   } catch (error) {
     scope.postMessage({

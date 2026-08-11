@@ -44,12 +44,6 @@ export const TRANSITION_POWER = 1
 export const MODEL_URL = '/lab/peelr/model.onnx'
 
 /**
- * ONNX Runtime's own `.wasm` and `.mjs`, served from `public/`. At 23.13 MiB the
- * WebGPU runtime fits under the static asset cap, unlike the deprecated JSEP build.
- */
-export const ORT_ASSET_PREFIX = '/peelr/ort/'
-
-/**
  * Four stems plus the original, held as float samples, is roughly 127 MB per buffer at
  * this length. Longer inputs exhaust a laptop tab before they finish. See section 7 of
  * the plan.
