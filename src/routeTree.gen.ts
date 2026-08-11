@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LabIndexRouteImport } from './routes/lab/index'
 import { Route as LabHelloServerRouteImport } from './routes/lab/hello-server'
+import { Route as LabPeelrRouteImport } from './routes/lab/peelr'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,34 +29,43 @@ const LabHelloServerRoute = LabHelloServerRouteImport.update({
   path: '/lab/hello-server',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabPeelrRoute = LabPeelrRouteImport.update({
+  id: '/lab/peelr',
+  path: '/lab/peelr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/lab/hello-server': typeof LabHelloServerRoute
+  '/lab/peelr': typeof LabPeelrRoute
   '/lab/': typeof LabIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/lab/hello-server': typeof LabHelloServerRoute
+  '/lab/peelr': typeof LabPeelrRoute
   '/lab': typeof LabIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/lab/hello-server': typeof LabHelloServerRoute
+  '/lab/peelr': typeof LabPeelrRoute
   '/lab/': typeof LabIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/lab/hello-server' | '/lab/'
+  fullPaths: '/' | '/lab/hello-server' | '/lab/peelr' | '/lab/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/lab/hello-server' | '/lab'
-  id: '__root__' | '/' | '/lab/hello-server' | '/lab/'
+  to: '/' | '/lab/hello-server' | '/lab/peelr' | '/lab'
+  id: '__root__' | '/' | '/lab/hello-server' | '/lab/peelr' | '/lab/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LabHelloServerRoute: typeof LabHelloServerRoute
+  LabPeelrRoute: typeof LabPeelrRoute
   LabIndexRoute: typeof LabIndexRoute
 }
 
@@ -82,12 +92,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabHelloServerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lab/peelr': {
+      id: '/lab/peelr'
+      path: '/lab/peelr'
+      fullPath: '/lab/peelr'
+      preLoaderRoute: typeof LabPeelrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LabHelloServerRoute: LabHelloServerRoute,
+  LabPeelrRoute: LabPeelrRoute,
   LabIndexRoute: LabIndexRoute,
 }
 export const routeTree = rootRouteImport

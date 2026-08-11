@@ -36,6 +36,26 @@ export const SEGMENT_OVERLAP = 0.25
 /** Demucs' `transition_power` default. */
 export const TRANSITION_POWER = 1
 
+/**
+ * Served through the Worker from R2, because Workers cap an individual static asset at
+ * 25 MiB and the model is larger. The key is content-addressed, so the response can be
+ * cached immutably and a new export is simply a new URL.
+ */
+export const MODEL_URL = '/lab/peelr/model.onnx'
+
+/**
+ * ONNX Runtime's own `.wasm` and `.mjs`, served from `public/`. At 23.13 MiB the
+ * WebGPU runtime fits under the static asset cap, unlike the deprecated JSEP build.
+ */
+export const ORT_ASSET_PREFIX = '/peelr/ort/'
+
+/**
+ * Four stems plus the original, held as float samples, is roughly 127 MB per buffer at
+ * this length. Longer inputs exhaust a laptop tab before they finish. See section 7 of
+ * the plan.
+ */
+export const MAX_DURATION_SECONDS = 6 * 60
+
 export const STEMS = ['drums', 'bass', 'other', 'vocals'] as const
 
 export type Stem = (typeof STEMS)[number]
