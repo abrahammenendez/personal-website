@@ -48,6 +48,13 @@ export const MODEL_URL = '/lab/peelr/model.onnx'
  * this length. Longer inputs exhaust a laptop tab before they finish. See section 7 of
  * the plan.
  */
+/**
+ * ONNX Runtime's own `.wasm` and `.mjs`, served from `public/`. They are static assets
+ * rather than bundled ones so the 23 MiB binary never reaches the Worker script, which
+ * Cloudflare caps at 3 MiB. `scripts/copy-ort-assets.mjs` puts them there.
+ */
+export const ORT_ASSET_PREFIX = '/peelr/ort/'
+
 export const MAX_DURATION_SECONDS = 6 * 60
 
 export const STEMS = ['drums', 'bass', 'other', 'vocals'] as const

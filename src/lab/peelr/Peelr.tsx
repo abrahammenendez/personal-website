@@ -19,6 +19,21 @@ interface Decoded {
   right: Float32Array
 }
 
+/**
+ * Loads the separator, and only ever in the browser.
+ *
+ * The separator constructs a Web Worker that pulls in ONNX Runtime and ~23 MB of
+ * WebAssembly. Vite builds a worker for every environment that references one, so a
+ * plain dynamic import puts a second copy of all of it into the server bundle, and the
+ * Worker script then blows past Cloudflare's 3 MiB limit.
+ *
+ * `import.meta.env.SSR` is replaced with a literal at build time, so on the server this
+ * collapses to the rejecting branch and the whole graph is shaken out.
+ */
+const loadSeparator = import.meta.env.SSR
+  ? () => Promise.reject(new Error('peelr runs in the browser only'))
+  : () => import('./separator')
+
 /** Decodes to 44.1 kHz stereo, the only rate the model accepts. */
 async function decode(file: File): Promise<Decoded> {
   const bytes = await file.arrayBuffer()
@@ -63,9 +78,9 @@ export function Peelr() {
       const { left, right } = await decode(file)
       const original = encodeWav(left, right)
 
-      // Imported here rather than at module scope so ONNX Runtime and the worker stay
-      // out of the initial bundle, and prerendering never touches `navigator.gpu`.
-      const { Separator: Client } = await import('./separator')
+      // Loaded here rather than at module scope so ONNX Runtime and the worker stay out
+      // of the initial bundle, and prerendering never touches `navigator.gpu`.
+      const { Separator: Client } = await loadSeparator()
       separator.current ??= new Client({
         onDownload: (loaded, total) => setPhase({ name: 'downloading', loaded, total }),
         onProgress: (completed, total) => setPhase({ name: 'separating', completed, total }),

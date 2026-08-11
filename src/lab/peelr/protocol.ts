@@ -2,7 +2,7 @@ import type { Stem } from './constants'
 
 /** Messages the page sends to the worker. */
 export type WorkerRequest =
-  | { type: 'init'; modelUrl: string }
+  | { type: 'init'; modelUrl: string; wasmPrefix: string }
   | { type: 'separate'; left: Float32Array; right: Float32Array }
 
 /** Messages the worker sends back. */

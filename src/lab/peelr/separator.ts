@@ -1,4 +1,4 @@
-import { MODEL_URL, type Stem } from './constants'
+import { MODEL_URL, ORT_ASSET_PREFIX, type Stem } from './constants'
 import type { WorkerResponse } from './protocol'
 
 export type Stems = Record<Stem, { left: Float32Array; right: Float32Array }>
@@ -24,8 +24,8 @@ export class Separator {
   }
 
   /** Downloads the model and builds the session. Safe to call more than once. */
-  init(modelUrl: string = MODEL_URL): Promise<void> {
-    this.ready ??= this.request({ type: 'init', modelUrl }, (message) =>
+  init(modelUrl: string = MODEL_URL, wasmPrefix: string = ORT_ASSET_PREFIX): Promise<void> {
+    this.ready ??= this.request({ type: 'init', modelUrl, wasmPrefix }, (message) =>
       message.type === 'ready' ? { done: true, value: undefined } : undefined,
     )
     return this.ready
