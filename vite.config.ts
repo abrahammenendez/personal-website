@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { devtools } from '@tanstack/devtools-vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
-import { defaultClientConditions, defaultServerConditions, defineConfig } from 'vite'
+import { defaultClientConditions, defaultServerConditions, defineConfig, type Plugin } from 'vite'
 // Relative and extension-qualified, not `@/`: Node resolves this while
 // evaluating the config, before Vite's aliases apply.
 import { SITE } from './src/lib/seo.ts'
@@ -22,6 +22,26 @@ const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
  */
 const ORT_EXTERN_WASM = 'onnxruntime-web-use-extern-wasm'
 
+/**
+ * ONNX Runtime loads its runtime with a dynamic `import()` of a file peelr serves from
+ * `public/`. The dev server's import analysis appends `?import` to that URL and then
+ * refuses to resolve it, because files in `public/` are served as-is rather than
+ * transformed, so peelr fails with "no available backend found" under `vite dev` while
+ * working correctly in a production build. Dropping the query restores it.
+ */
+const peelrOrtRuntime: Plugin = {
+  name: 'peelr-ort-runtime',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((request, _response, next) => {
+      if (request.url?.startsWith('/peelr/ort/')) {
+        request.url = request.url.split('?')[0]
+      }
+      next()
+    })
+  },
+}
+
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
@@ -37,6 +57,7 @@ export default defineConfig({
    */
   optimizeDeps: { exclude: ['onnxruntime-web'] },
   plugins: [
+    peelrOrtRuntime,
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
     tailwindcss(),

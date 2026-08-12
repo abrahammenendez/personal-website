@@ -16,6 +16,28 @@ interface TrackState {
 /** Beyond this the elements are audibly out of step, so the laggard gets pulled back. */
 const MAX_DRIFT_SECONDS = 0.05
 
+/**
+ * `createMediaElementSource` binds an element to one context permanently: calling it
+ * twice for the same element throws `InvalidStateError`, and the element cannot be
+ * moved to a new context afterwards. React remounts effects freely, in StrictMode and
+ * on any error-boundary retry, so both the context and the wiring are shared and
+ * created at most once per element rather than per mount.
+ */
+let sharedContext: AudioContext | undefined
+const wiring = new WeakMap<HTMLAudioElement, GainNode>()
+
+function gainFor(element: HTMLAudioElement): GainNode {
+  const existing = wiring.get(element)
+  if (existing) return existing
+
+  sharedContext ??= new AudioContext()
+  const gain = sharedContext.createGain()
+  sharedContext.createMediaElementSource(element).connect(gain)
+  gain.connect(sharedContext.destination)
+  wiring.set(element, gain)
+  return gain
+}
+
 export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
   const elements = useRef<(HTMLAudioElement | null)[]>([])
   const gainNodes = useRef<(GainNode | undefined)[]>([])
@@ -28,23 +50,10 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
 
   /**
    * Routing through Web Audio rather than setting `element.volume` keeps gain changes
-   * sample-accurate and leaves room for meters later. The context is a real external
-   * resource, so it is created and torn down here.
+   * sample-accurate and leaves room for meters later.
    */
   useEffect(() => {
-    const context = new AudioContext()
-    const gains = elements.current.map((element) => {
-      if (!element) return undefined
-      const gain = context.createGain()
-      context.createMediaElementSource(element).connect(gain)
-      gain.connect(context.destination)
-      return gain
-    })
-    gainNodes.current = gains
-    return () => {
-      void context.close()
-      gainNodes.current = []
-    }
+    gainNodes.current = elements.current.map((element) => (element ? gainFor(element) : undefined))
   }, [])
 
   // Applying gain during render would fight React; this mirrors state onto the graph.
