@@ -32,6 +32,9 @@ const CONTENT_SECURITY_POLICY = [
   // Without this, `worker-src` falls back to `script-src`, and Vite starts module
   // workers from a `blob:` URL, so the worker is blocked outright.
   "worker-src 'self' blob:",
+  // peelr hands its separated stems to `<audio>` as `blob:` URLs, and `media-src`
+  // otherwise falls back to `default-src`, which blocks them.
+  "media-src 'self' blob:",
   STYLE_SRC,
   "img-src 'self' data:",
   "font-src 'self'",
