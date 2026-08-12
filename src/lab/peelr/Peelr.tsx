@@ -297,7 +297,7 @@ export function Peelr() {
       {/* The weights are MIT licensed and this site redistributes them, so the notice
           has to travel with them. */}
       <p className="text-meta text-muted-foreground">
-        Separation by{' '}
+        Model:{' '}
         <a
           className="underline"
           href="https://github.com/adefossez/demucs"
@@ -307,7 +307,8 @@ export function Peelr() {
           Demucs
         </a>{' '}
         (htdemucs), copyright Meta Platforms, Inc., MIT licensed. Its weights are converted to ONNX
-        and served from this site.
+        and served from this site. Export, transforms and WebGPU pipeline made by me (with help from
+        Claude).
       </p>
     </section>
   )
