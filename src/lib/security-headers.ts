@@ -26,12 +26,10 @@ const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  // The three peelr needs. `wasm-unsafe-eval` is what lets ONNX Runtime compile a
-  // WebAssembly module; it does not permit `eval`. `worker-src` has to be explicit
-  // because it otherwise falls back to `script-src`, which would block the dev
-  // server's `blob:` module workers. `media-src` falls back to `default-src` in the
-  // same way, which would block the separated stems handed to `<audio>`.
+  // `wasm-unsafe-eval` lets WebAssembly compile. It does not permit `eval`.
   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${CLOUDFLARE_BEACON_ORIGIN}`,
+  // Both fall back to `script-src` and `default-src` when left unset, which blocks the
+  // dev server's `blob:` module workers and any `blob:` handed to `<audio>`.
   "worker-src 'self' blob:",
   "media-src 'self' blob:",
   STYLE_SRC,

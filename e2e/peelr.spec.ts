@@ -1,10 +1,6 @@
 import { expect, type Page, test } from '@playwright/test'
 
-/**
- * Forced either way, because headless Chromium may or may not expose WebGPU. Separation
- * itself needs a real GPU, so it is covered by the unit tests against the Python
- * fixtures rather than here.
- */
+/** Forced either way, because headless Chromium may or may not expose WebGPU. */
 function stubWebGpu(page: Page, available: boolean) {
   return page.addInitScript(
     (value) => {
@@ -25,6 +21,17 @@ test.describe('/lab/peelr', () => {
         'This needs WebGPU in Chrome or Edge. Firefox and Safari are not supported yet.',
       ),
     ).toBeVisible()
+  })
+
+  test('carries the licence notice for the weights it redistributes', async ({ page }) => {
+    await page.goto('/lab/peelr')
+
+    const credit = page.getByText(/Separation by Demucs/)
+    await expect(credit).toContainText('MIT licensed')
+    await expect(credit.getByRole('link', { name: 'Demucs' })).toHaveAttribute(
+      'href',
+      'https://github.com/adefossez/demucs',
+    )
   })
 
   test('states the limits and takes a file without dragging', async ({ page }) => {

@@ -53,10 +53,14 @@ src/
 │   └── lab/           The Lab index, plus one route file per experiment
 ├── lab/             The experiment registry, and one directory per experiment
 ├── components/      Shared components; ui/ holds vendored shadcn primitives
-├── lib/             SEO, theming, Sentry config, security headers, Worker routes
+├── lib/             SEO, theming, Sentry config, security headers
+├── worker/          Modules only the Worker entry (server.ts) may import
 ├── router.tsx       Router factory and typed Register
 └── styles.css       Tailwind entry, @theme tokens, colour tokens
 ```
+
+[`model/`](./model) sits outside `src/`, one directory per experiment that needs a
+model: the Python that exports it and generates its test fixtures. It runs by hand.
 
 ## How it works
 
@@ -78,20 +82,21 @@ functions, and a component that consumes them.
 visitor's GPU, so the arithmetic that competitors rent servers for happens in the
 tab. Most of it is ordinary signal processing, tested against fixtures generated
 by the Python it reimplements, which is the only way a subtly wrong transform
-gets caught before it ships as slightly wrong audio.
+gets caught before it ships as slightly wrong audio. [`model/peelr/`](./model/peelr)
+holds that Python, including the export and both fixture generators.
 
 It needs two things from the platform, both consequences of size.
 
-- **The ONNX model is served from R2**, by `src/lib/peelr-model.ts`, because
-  Workers cap an individual static asset at 25 MiB and the model is an order of
-  magnitude past that. Its URL carries a content hash, so the response can be
-  immutable for a year and a new export is simply a new URL.
+- **The ONNX model is served from R2**, by `src/worker/peelr-model.ts`, because
+  Workers cap an individual static asset at 25 MiB and the model is several
+  times that. Its URL carries a content hash, so the response can be immutable
+  for a year and a new export is simply a new URL.
 - **ONNX Runtime's 23 MiB WebAssembly binary is a static asset, not a bundled
-  one.** Vite emits a worker into *every* environment that references one, so
-  making that binary a Vite asset puts it in the server bundle and the Worker
-  script blows past Cloudflare's 3 MiB limit. `scripts/copy-ort-assets.mjs`
-  copies it into `public/` instead, and `vite.config.ts` picks the ONNX Runtime
-  build that loads it from a path rather than inlining a reference to it.
+  one.** Vite emits a Web Worker's assets into *every* environment, the server
+  one included, so making that binary a Vite asset pushes the Worker script past
+  Cloudflare's 3 MiB limit. `scripts/copy-ort-assets.mjs` copies it into
+  `public/` instead, and `vite.config.ts` picks the ONNX Runtime build that
+  loads it from a path rather than inlining a reference to it.
 
 Every static route prerenders whether it is linked or not, so `published: false`
 keeps an experiment out of the index and the sitemap while leaving it shareable

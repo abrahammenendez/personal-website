@@ -4,8 +4,8 @@ import { SAMPLE_RATE, SEGMENT_SAMPLES } from './constants'
 import { demucsIspec, demucsSpec, hannWindow, reflectPad, stft } from './fft'
 
 /**
- * Mirrors `signal()` in the fixture generator. Defined by formula in both languages so
- * the input never has to be committed.
+ * Mirrors `signal()` in `model/peelr/make_fixtures.py`. Defined by formula in both languages
+ * so the input never has to be committed.
  */
 function signal(channel: 0 | 1, n = SEGMENT_SAMPLES): Float32Array {
   const x = new Float32Array(n)

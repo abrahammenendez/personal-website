@@ -195,6 +195,22 @@ export function Peelr() {
           </Button>
         </>
       ) : null}
+
+      {/* The weights are MIT licensed and this site redistributes them, so the notice
+          has to travel with them. */}
+      <p className="text-muted-foreground text-xs">
+        Separation by{' '}
+        <a
+          className="underline"
+          href="https://github.com/adefossez/demucs"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Demucs
+        </a>{' '}
+        (htdemucs), copyright Meta Platforms, Inc., MIT licensed. Its weights are converted to ONNX
+        and served from this site.
+      </p>
     </section>
   )
 }

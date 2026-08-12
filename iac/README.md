@@ -63,6 +63,6 @@ Cloudflare API token.
    change something does not match the zone, and the configuration is what
    should move.
 
-Very important to take record contents, TTLs and TXT quoting from the generator rather than
+Take record contents, TTLs and TXT quoting from the generator rather than
 guessing them. They round-trip through the API in shapes that are easy to get
 subtly wrong, and a wrong guess surfaces as drift that never settles.

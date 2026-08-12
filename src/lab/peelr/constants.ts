@@ -51,7 +51,7 @@ export const TRANSITION_POWER = 1
  */
 export const MODEL_VERSION = '87bdf3b4'
 
-/** Served by the Worker rather than as a static asset. See `src/lib/peelr-model.ts`. */
+/** Served by the Worker rather than as a static asset. See `src/worker/peelr-model.ts`. */
 export const MODEL_URL = `/lab/peelr/model-${MODEL_VERSION}.onnx`
 
 /**

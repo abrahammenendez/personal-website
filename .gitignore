@@ -56,3 +56,8 @@ public/peelr/ort/
 # Reference stems written here when peelr's output is measured against Python Demucs.
 # Ignored so a stray 20 MB of audio never gets copied into a build.
 public/peelr-eval/
+
+model/**/*.onnx
+model/**/eval/
+model/**/.venv/
+__pycache__/

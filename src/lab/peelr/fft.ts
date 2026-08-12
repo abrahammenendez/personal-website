@@ -5,9 +5,8 @@ import { BINS, CENTER_PAD, FRAME_TRIM, HOP, N_FFT, SPEC_PAD } from './constants'
  * construction, but `noUncheckedIndexedAccess` cannot prove it.
  *
  * `segments.ts` and `pipeline.ts` keep their own copies rather than importing this one.
- * That is deliberate and measured: sharing it makes the inner loops here 7x slower,
- * because V8 will not inline through an ES module binding and this runs tens of
- * millions of times per segment.
+ * Sharing it makes the loops here 7x slower: V8 will not inline through an ES module
+ * binding, and this runs tens of millions of times per segment.
  */
 const at = (values: Float32Array | Float64Array, index: number): number => values[index] as number
 

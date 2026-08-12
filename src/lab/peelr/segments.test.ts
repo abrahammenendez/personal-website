@@ -14,7 +14,7 @@ import {
   triangleWindow,
 } from './segments'
 
-/** Mirrors `signal()` in `seg_fixtures.py`. */
+/** Mirrors `signal()` in `model/peelr/seg_fixtures.py`. */
 function signal(n: number): Float32Array {
   const x = new Float32Array(n)
   for (let i = 0; i < n; i++) {

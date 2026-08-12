@@ -6,8 +6,8 @@ import { ORT_ASSET_PREFIX } from '../src/lab/peelr/constants.ts'
 
 /**
  * Copies ONNX Runtime's WebGPU runtime into `public/` on `predev` and `prebuild`.
- * README.md has why it is a static asset rather than a bundled one; `public/` is
- * copied to the client output only, which is the whole point.
+ * README.md has why it is a static asset rather than a bundled one. `public/` is copied
+ * to the client output only.
  *
  * Generated rather than committed: these are build outputs of a pinned dependency, and
  * git is the wrong place for a 23 MiB binary.

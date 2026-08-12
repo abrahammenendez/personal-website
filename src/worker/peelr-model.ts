@@ -1,8 +1,5 @@
-/**
- * Peelr's Worker half. It lives here rather than in `src/lab/peelr/` because it is the
- * only part of the experiment that imports `cloudflare:workers`, which the client build
- * cannot resolve, and the experiment's barrel is imported by both.
- */
+// `cloudflare:workers` is why this cannot sit in the experiment's own directory: the
+// barrel is imported by the client too, and the client build fails to resolve it.
 import { env } from 'cloudflare:workers'
 import { MODEL_URL, MODEL_VERSION } from '@/lab/peelr'
 
@@ -13,10 +10,10 @@ const MODEL_KEY = `peelr/htdemucs-split-${MODEL_VERSION}.onnx`
  * Streams peelr's ONNX model out of R2.
  *
  * It cannot ship as a static asset: Cloudflare caps an individual asset at 25 MiB and
- * the model is an order of magnitude larger. Streaming costs no measurable CPU against
- * the Worker's 10 ms budget, because time spent waiting on storage does not count.
+ * the model is several times that. Streaming costs no measurable CPU against the
+ * Worker's 10 ms budget, because time spent waiting on storage does not count.
  */
-export async function serveModel(request: Request): Promise<Response | undefined> {
+export async function servePeelrModel(request: Request): Promise<Response | undefined> {
   if (new URL(request.url).pathname !== MODEL_URL) return undefined
 
   const object = await env.PEELR_MODELS.get(MODEL_KEY)
@@ -24,8 +21,6 @@ export async function serveModel(request: Request): Promise<Response | undefined
     return new Response(`model not found at ${MODEL_KEY}`, { status: 503 })
   }
 
-  // Set outright rather than through `writeHttpMetadata`, because every one of these is
-  // a property of how we serve the object rather than of how it happened to be uploaded.
   return new Response(object.body, {
     headers: {
       'content-type': 'application/octet-stream',

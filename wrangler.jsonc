@@ -16,7 +16,7 @@
     // at a redirect. `directory` is set by the Cloudflare Vite plugin.
     "html_handling": "drop-trailing-slash"
   },
-  // Holds peelr's ONNX model, which `src/lib/peelr-model.ts` streams out. The bucket
+  // Holds peelr's ONNX model, which `src/worker/peelr-model.ts` streams out. The bucket
   // itself is declared in iac/.
   "r2_buckets": [
     {
