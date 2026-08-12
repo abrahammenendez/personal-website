@@ -11,6 +11,11 @@ const PAGES = [
     canonical: `${SITE_URL}/lab/hello-server`,
     title: 'Hello, server — Abraham Menéndez',
   },
+  {
+    path: '/lab/peelr',
+    canonical: `${SITE_URL}/lab/peelr`,
+    title: 'peelr — Abraham Menéndez',
+  },
 ]
 
 test.describe('per-page metadata', () => {
@@ -73,7 +78,7 @@ test.describe('crawlable surface', () => {
     // Guards `html_handling` in wrangler.jsonc: on the default setting
     // Cloudflare serves these at `/<slug>/`, so every canonical would point at
     // a URL that redirects.
-    for (const path of ['/lab', '/lab/hello-server']) {
+    for (const path of ['/lab', '/lab/hello-server', '/lab/peelr']) {
       const direct = await request.get(path, { maxRedirects: 0 })
       expect(direct.status(), `${path} should be served, not redirected`).toBe(200)
 

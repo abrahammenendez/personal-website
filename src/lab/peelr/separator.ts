@@ -1,5 +1,5 @@
 import { MODEL_URL, ORT_ASSET_PREFIX, type Stem } from './constants'
-import type { WorkerResponse } from './protocol'
+import type { WorkerRequest, WorkerResponse } from './protocol'
 
 export type Stems = Record<Stem, { left: Float32Array; right: Float32Array }>
 
@@ -8,12 +8,7 @@ export interface SeparatorEvents {
   onProgress?: (completed: number, total: number) => void
 }
 
-/**
- * Typed client for the separation worker.
- *
- * The worker owns the ONNX Runtime session and outlives a single track, so separating a
- * second file pays neither the download nor the session build again.
- */
+/** The worker owns the ONNX Runtime session, so later tracks reuse it. */
 export class Separator {
   private readonly worker: Worker
   private ready: Promise<void> | undefined
@@ -23,12 +18,17 @@ export class Separator {
     this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
   }
 
-  /** Downloads the model and builds the session. Safe to call more than once. */
-  init(modelUrl: string = MODEL_URL, wasmPrefix: string = ORT_ASSET_PREFIX): Promise<void> {
+  /** Downloads the model and builds the session. */
+  async init(modelUrl: string = MODEL_URL, wasmPrefix: string = ORT_ASSET_PREFIX): Promise<void> {
     this.ready ??= this.request({ type: 'init', modelUrl, wasmPrefix }, (message) =>
       message.type === 'ready' ? { done: true, value: undefined } : undefined,
     )
-    return this.ready
+    try {
+      await this.ready
+    } catch (error) {
+      this.ready = undefined
+      throw error
+    }
   }
 
   async separate(left: Float32Array, right: Float32Array): Promise<Stems> {
@@ -47,7 +47,7 @@ export class Separator {
   }
 
   private request<T>(
-    message: Parameters<Worker['postMessage']>[0],
+    message: WorkerRequest,
     resolveOn: (response: WorkerResponse) => { done: true; value: T } | undefined,
     transfer: Transferable[] = [],
   ): Promise<T> {

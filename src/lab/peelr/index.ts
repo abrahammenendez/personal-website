@@ -1,4 +1,2 @@
-export { MODEL_URL, MODEL_VERSION, SAMPLE_RATE, STEMS, type Stem } from './constants'
+export { MODEL_URL, MODEL_VERSION } from './constants'
 export { Peelr } from './Peelr'
-export { Separator, type Stems } from './separator'
-export { encodeWav } from './wav'

@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 
 export interface MixerTrack {
   name: string
-  /** Object URL for a WAV blob. The audio element streams it, so it stays off the heap. */
   url: string
 }
 
@@ -15,48 +14,21 @@ interface TrackState {
 
 /** Beyond this the elements are audibly out of step, so the laggard gets pulled back. */
 const MAX_DRIFT_SECONDS = 0.05
-
-/**
- * `createMediaElementSource` binds an element to one context permanently: calling it
- * twice for the same element throws `InvalidStateError`, and the element cannot be
- * moved to a new context afterwards. React remounts effects freely, in StrictMode and
- * on any error-boundary retry, so both the context and the wiring are shared and
- * created at most once per element rather than per mount.
- */
-let sharedContext: AudioContext | undefined
-const wiring = new WeakMap<HTMLAudioElement, GainNode>()
-
-function gainFor(element: HTMLAudioElement): GainNode {
-  const existing = wiring.get(element)
-  if (existing) return existing
-
-  sharedContext ??= new AudioContext()
-  const gain = sharedContext.createGain()
-  sharedContext.createMediaElementSource(element).connect(gain)
-  gain.connect(sharedContext.destination)
-  wiring.set(element, gain)
-  return gain
-}
+const DEFAULT_TRACK_STATE: TrackState = { volume: 1, muted: false, solo: false }
 
 export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
   const elements = useRef<(HTMLAudioElement | null)[]>([])
-  const gainNodes = useRef<(GainNode | undefined)[]>([])
+  const context = useRef<AudioContext | undefined>(undefined)
+  const gainNodes = useRef<GainNode[]>([])
   const [playing, setPlaying] = useState(false)
+  const [starting, setStarting] = useState(false)
+  const [playbackError, setPlaybackError] = useState<string | undefined>(undefined)
   const [states, setStates] = useState<TrackState[]>(() =>
     tracks.map(() => ({ volume: 1, muted: false, solo: false })),
   )
 
   const anySolo = states.some((state) => state.solo)
 
-  /**
-   * Routing through Web Audio rather than setting `element.volume` keeps gain changes
-   * sample-accurate and leaves room for meters later.
-   */
-  useEffect(() => {
-    gainNodes.current = elements.current.map((element) => (element ? gainFor(element) : undefined))
-  }, [])
-
-  // Applying gain during render would fight React; this mirrors state onto the graph.
   useEffect(() => {
     states.forEach((state, index) => {
       const audible = !state.muted && (!anySolo || state.solo)
@@ -65,7 +37,6 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
     })
   }, [states, anySolo])
 
-  /** Four independent media elements drift apart; this pulls them back to the first. */
   useEffect(() => {
     if (!playing) return
     const id = window.setInterval(() => {
@@ -80,13 +51,54 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
     return () => window.clearInterval(id)
   }, [playing])
 
-  function toggle() {
-    const next = !playing
-    setPlaying(next)
+  useEffect(
+    () => () => {
+      for (const element of elements.current) element?.pause()
+      void context.current?.close()
+    },
+    [],
+  )
+
+  function connectAudio() {
+    context.current ??= new AudioContext()
+    if (gainNodes.current.length > 0) return context.current
+
     for (const element of elements.current) {
       if (!element) continue
-      if (next) void element.play()
-      else element.pause()
+      const gain = context.current.createGain()
+      context.current
+        .createMediaElementSource(element)
+        .connect(gain)
+        .connect(context.current.destination)
+      gainNodes.current.push(gain)
+    }
+    states.forEach((state, index) => {
+      const audible = !state.muted && (!anySolo || state.solo)
+      const gain = gainNodes.current[index]
+      if (gain) gain.gain.value = audible ? state.volume : 0
+    })
+    return context.current
+  }
+
+  async function toggle() {
+    if (playing) {
+      for (const element of elements.current) element?.pause()
+      setPlaying(false)
+      return
+    }
+
+    setStarting(true)
+    setPlaybackError(undefined)
+    const audioContext = connectAudio()
+    const starts = elements.current.flatMap((element) => (element ? [element.play()] : []))
+    try {
+      await Promise.all([audioContext.resume(), ...starts])
+      setPlaying(true)
+    } catch {
+      for (const element of elements.current) element?.pause()
+      setPlaybackError('Playback could not start. You can still download each stem.')
+    } finally {
+      setStarting(false)
     }
   }
 
@@ -98,25 +110,28 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Button onClick={toggle}>{playing ? 'Pause' : 'Play all'}</Button>
+      <Button disabled={starting} onClick={() => void toggle()}>
+        {starting ? 'Starting…' : playing ? 'Pause' : 'Play all'}
+      </Button>
+
+      {playbackError ? <p role="alert">{playbackError}</p> : null}
 
       <ul className="flex flex-col gap-3">
         {tracks.map((track, index) => {
-          const state = states[index] ?? { volume: 1, muted: false, solo: false }
+          const state = states[index] ?? DEFAULT_TRACK_STATE
           return (
             <li className="flex items-center gap-3" key={track.name}>
               <span className="w-20 shrink-0 text-sm capitalize">{track.name}</span>
 
+              {/* biome-ignore lint/a11y/useMediaCaption: The separate stems have no dialogue to transcribe. */}
               <audio
                 className="sr-only"
-                preload="auto"
+                preload="metadata"
                 ref={(element) => {
                   elements.current[index] = element
                 }}
                 src={track.url}
-              >
-                <track kind="captions" />
-              </audio>
+              />
 
               <input
                 aria-label={`${track.name} volume`}

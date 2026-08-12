@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const PAGES = ['/', '/lab', '/lab/hello-server']
+const PAGES = ['/', '/lab', '/lab/hello-server', '/lab/peelr']
 
 test.describe('site header', () => {
   test('renders on every page', async ({ page }) => {
