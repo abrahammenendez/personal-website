@@ -47,8 +47,8 @@ Thumbs.db
 *.local
 .claude/
 .codex/
-
-
+AGENTS.md
+CLAUDE.md
 
 # Generated from the pinned onnxruntime-web dependency by scripts/copy-ort-assets.mjs
 public/peelr/ort/
