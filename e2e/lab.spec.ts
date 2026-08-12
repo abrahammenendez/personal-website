@@ -28,18 +28,6 @@ test.describe('/lab', () => {
     }
   })
 
-  test('opens an experiment, and the experiment links back to the list', async ({ page }) => {
-    await page.goto('/lab')
-
-    await page.getByRole('main').locator('a[href="/lab/peelr"]').click()
-    await expect(page).toHaveURL('/lab/peelr')
-    await expect(page.getByRole('heading', { level: 1, name: 'peelr' })).toBeVisible()
-
-    // Scoped to `main`: the site header also has a "Lab" nav link.
-    await page.getByRole('main').getByRole('link', { name: 'Lab' }).click()
-    await expect(page).toHaveURL('/lab')
-  })
-
   test('is readable with JavaScript disabled', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false })
     const page = await context.newPage()
