@@ -79,8 +79,8 @@ both. Copy its shape: a pure, tested `logic.ts`, an `api.ts` holding the server
 functions, and a component that consumes them.
 
 `src/lab/peelr/` is the other end of the range: stem separation running on the
-visitor's GPU, so the arithmetic that competitors rent servers for happens in the
-tab. Most of it is ordinary signal processing, tested against fixtures generated
+visitor's GPU, so the arithmetic that paid services rent servers for happens in
+the tab. Most of it is ordinary signal processing, tested against fixtures generated
 by the Python it reimplements, which is the only way a subtly wrong transform
 gets caught before it ships as slightly wrong audio. [`model/peelr/`](./model/peelr)
 holds that Python, including the export and both fixture generators.
@@ -99,9 +99,9 @@ It needs two things from the platform, both consequences of size.
   loads it from a path rather than inlining a reference to it.
 
 Every static route prerenders whether it is linked or not, so `published: false`
-keeps an experiment out of the index and the sitemap while leaving it shareable
-by link. Biome's `noRestrictedImports` rejects `@/lab/*/*` deep imports, so each
-experiment stays reachable only through its barrel.
+keeps an experiment out of the index while leaving it shareable by link. Biome's
+`noRestrictedImports` rejects `@/lab/*/*` deep imports, so each experiment stays
+reachable only through its barrel.
 
 ### Every route declares its own `<head>`
 

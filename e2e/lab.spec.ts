@@ -31,9 +31,9 @@ test.describe('/lab', () => {
   test('opens an experiment, and the experiment links back to the list', async ({ page }) => {
     await page.goto('/lab')
 
-    await page.getByRole('main').locator('a[href="/lab/hello-server"]').click()
-    await expect(page).toHaveURL('/lab/hello-server')
-    await expect(page.getByRole('heading', { level: 1, name: 'Hello, server' })).toBeVisible()
+    await page.getByRole('main').locator('a[href="/lab/peelr"]').click()
+    await expect(page).toHaveURL('/lab/peelr')
+    await expect(page.getByRole('heading', { level: 1, name: 'peelr' })).toBeVisible()
 
     // Scoped to `main`: the site header also has a "Lab" nav link.
     await page.getByRole('main').getByRole('link', { name: 'Lab' }).click()

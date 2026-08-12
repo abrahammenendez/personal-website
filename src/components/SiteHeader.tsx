@@ -9,6 +9,7 @@ export function SiteHeader() {
         <NavLink to="/" activeOptions={{ exact: true }}>
           Home
         </NavLink>
+        <NavLink to="/lab">Lab</NavLink>
       </nav>
       <ThemeToggle />
     </header>
