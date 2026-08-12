@@ -1,4 +1,4 @@
-import { BINS, FRAMES, SEGMENT_SAMPLES, STEMS } from './constants'
+import { BINS, FRAMES, SEGMENT_SAMPLES, STEMS, type Stem } from './constants'
 import { demucsIspec, demucsSpec, type Spectrum } from './fft'
 import {
   accumulateSegment,
@@ -13,8 +13,13 @@ import {
   triangleWindow,
 } from './segments'
 
+/** A local copy on purpose. `fft.ts` explains what importing it costs. */
+const at = (values: Float32Array | Float64Array, index: number): number => values[index] as number
+
 /** Channel order is `[left.real, left.imag, right.real, right.imag]`, from `_magnitude`. */
 const SPEC_CHANNELS = 4
+
+export type Stems = Record<Stem, StereoBuffer>
 
 export interface ModelInput {
   /** `[1, 4, 2048, 336]`, already normalised. Bin-major, as PyTorch lays it out. */
@@ -34,7 +39,6 @@ export type RunModel = (input: ModelInput) => Promise<ModelOutput>
 
 export interface SeparateOptions {
   onProgress?: (completed: number, total: number) => void
-  signal?: AbortSignal
 }
 
 /**
@@ -48,8 +52,8 @@ function writeSpecChannels(target: Float32Array, spectrum: Spectrum, channelOffs
   for (let bin = 0; bin < BINS; bin++) {
     for (let frame = 0; frame < FRAMES; frame++) {
       const source = frame * BINS + bin
-      target[realBase + bin * FRAMES + frame] = spectrum.re[source] as number
-      target[imagBase + bin * FRAMES + frame] = spectrum.im[source] as number
+      target[realBase + bin * FRAMES + frame] = at(spectrum.re, source)
+      target[imagBase + bin * FRAMES + frame] = at(spectrum.im, source)
     }
   }
 }
@@ -64,8 +68,8 @@ function readSpecChannel(source: Float32Array, stem: number, channel: number): S
   for (let bin = 0; bin < BINS; bin++) {
     for (let frame = 0; frame < FRAMES; frame++) {
       const target = frame * BINS + bin
-      re[target] = source[realBase + bin * FRAMES + frame] as number
-      im[target] = source[imagBase + bin * FRAMES + frame] as number
+      re[target] = at(source, realBase + bin * FRAMES + frame)
+      im[target] = at(source, imagBase + bin * FRAMES + frame)
     }
   }
   return { re, im, frames: FRAMES, bins: BINS }
@@ -108,8 +112,8 @@ async function separateSegment(
     const right = demucsIspec(readSpecChannel(freq, stem, 1), SEGMENT_SAMPLES)
     const timeBase = stem * 2 * SEGMENT_SAMPLES
     for (let i = 0; i < SEGMENT_SAMPLES; i++) {
-      left[i] = (left[i] as number) + (time[timeBase + i] as number)
-      right[i] = (right[i] as number) + (time[timeBase + SEGMENT_SAMPLES + i] as number)
+      left[i] = at(left, i) + at(time, timeBase + i)
+      right[i] = at(right, i) + at(time, timeBase + SEGMENT_SAMPLES + i)
     }
     return { left, right }
   })
@@ -126,7 +130,7 @@ export async function separate(
   right: Float32Array,
   runModel: RunModel,
   options: SeparateOptions = {},
-): Promise<StereoBuffer[]> {
+): Promise<Stems> {
   if (left.length !== right.length) {
     throw new Error(`channel length mismatch: ${left.length} vs ${right.length}`)
   }
@@ -137,7 +141,6 @@ export async function separate(
   const accumulator = createAccumulator(total)
 
   for (let index = 0; index < offsets.length; index++) {
-    options.signal?.throwIfAborted()
     const offset = offsets[index] as number
     const length = segmentLengthAt(offset, total)
 
@@ -158,5 +161,10 @@ export async function separate(
     options.onProgress?.(index + 1, offsets.length)
   }
 
-  return finaliseAccumulator(accumulator)
+  const finalised = finaliseAccumulator(accumulator)
+  const stems = {} as Stems
+  STEMS.forEach((stem, index) => {
+    stems[stem] = finalised[index] as StereoBuffer
+  })
+  return stems
 }

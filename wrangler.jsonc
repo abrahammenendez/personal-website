@@ -16,8 +16,8 @@
     // at a redirect. `directory` is set by the Cloudflare Vite plugin.
     "html_handling": "drop-trailing-slash"
   },
-  // peelr's ONNX model is 87.70 MB, well over the 25 MiB cap on an individual static
-  // asset, so it is served from R2 through the Worker instead.
+  // Holds peelr's ONNX model, which `src/lib/peelr-model.ts` streams out. The bucket
+  // itself is declared in iac/.
   "r2_buckets": [
     {
       "binding": "PEELR_MODELS",

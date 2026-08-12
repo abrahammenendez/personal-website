@@ -1,8 +1,8 @@
-import type { Stem } from './constants'
+import type { Stems } from './pipeline'
 
 /** Messages the page sends to the worker. */
 export type WorkerRequest =
-  | { type: 'init'; modelUrl: string; wasmPrefix: string }
+  | { type: 'init' }
   | { type: 'separate'; left: Float32Array; right: Float32Array }
 
 /** Messages the worker sends back. */
@@ -10,7 +10,7 @@ export type WorkerResponse =
   | { type: 'download'; loaded: number; total: number }
   | { type: 'ready' }
   | { type: 'progress'; completed: number; total: number }
-  | { type: 'done'; stems: Record<Stem, { left: Float32Array; right: Float32Array }> }
+  | { type: 'done'; stems: Stems }
   | { type: 'error'; message: string }
 
 /**

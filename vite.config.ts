@@ -6,35 +6,33 @@ import { devtools } from '@tanstack/devtools-vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import { defaultClientConditions, defaultServerConditions, defineConfig, type Plugin } from 'vite'
-// Relative and extension-qualified, not `@/`: Node resolves this while
+// Relative and extension-qualified, not `@/`: Node resolves these while
 // evaluating the config, before Vite's aliases apply.
+import { ORT_ASSET_PREFIX } from './src/lab/peelr/constants.ts'
 import { SITE } from './src/lib/seo.ts'
 
 // Only set in the CI deploy job, so local builds skip source-map upload.
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN
 
 /**
- * ONNX Runtime ships two builds behind an export condition. The default one inlines
- * references to its own `.wasm`, so Vite emits that 23 MiB binary as an asset into
- * every environment, including the server, and the Worker script then exceeds
- * Cloudflare's 3 MiB limit. This condition selects the build that loads the runtime
- * from `env.wasm.wasmPaths` instead, which is what peelr serves out of `public/`.
+ * Selects the ONNX Runtime build that loads its `.wasm` from `env.wasm.wasmPaths`
+ * rather than the default, which inlines a reference Vite turns into a bundled asset.
+ * README.md has why that distinction decides whether the deploy succeeds.
  */
 const ORT_EXTERN_WASM = 'onnxruntime-web-use-extern-wasm'
 
 /**
- * ONNX Runtime loads its runtime with a dynamic `import()` of a file peelr serves from
- * `public/`. The dev server's import analysis appends `?import` to that URL and then
- * refuses to resolve it, because files in `public/` are served as-is rather than
- * transformed, so peelr fails with "no available backend found" under `vite dev` while
- * working correctly in a production build. Dropping the query restores it.
+ * ONNX Runtime reaches its runtime through a dynamic `import()`. The dev server's
+ * import analysis appends `?import` to that URL and then refuses to resolve it, because
+ * files under `public/` are served as-is rather than transformed. Symptom without this:
+ * "no available backend found" under `vite dev`, while a production build works.
  */
 const peelrOrtRuntime: Plugin = {
   name: 'peelr-ort-runtime',
   apply: 'serve',
   configureServer(server) {
     server.middlewares.use((request, _response, next) => {
-      if (request.url?.startsWith('/peelr/ort/')) {
+      if (request.url?.startsWith(ORT_ASSET_PREFIX)) {
         request.url = request.url.split('?')[0]
       }
       next()
@@ -49,11 +47,10 @@ export default defineConfig({
   },
   ssr: { resolve: { conditions: [ORT_EXTERN_WASM, ...defaultServerConditions] } },
   /**
-   * ONNX Runtime loads its own WebAssembly runtime through dynamic imports built from
-   * `env.wasm.wasmPaths`. Pre-bundling rewrites those imports, so Vite then tries to
-   * resolve a file we serve from `public/` as if it were source and fails. Excluding it
-   * also stops the dev server discovering it mid-session and forcing a full reload,
-   * which it does because peelr only imports it lazily.
+   * Pre-bundling rewrites the dynamic imports ONNX Runtime builds from
+   * `env.wasm.wasmPaths`, leaving Vite trying to resolve a `public/` file as source.
+   * Excluding it also stops the dev server discovering it mid-session and forcing a
+   * full reload, which it does because peelr only imports it lazily.
    */
   optimizeDeps: { exclude: ['onnxruntime-web'] },
   plugins: [

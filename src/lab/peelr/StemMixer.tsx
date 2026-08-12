@@ -14,7 +14,18 @@ interface TrackState {
 
 /** Beyond this the elements are audibly out of step, so the laggard gets pulled back. */
 const MAX_DRIFT_SECONDS = 0.05
+const RESYNC_INTERVAL_MS = 1000
+
 const DEFAULT_TRACK_STATE: TrackState = { volume: 1, muted: false, solo: false }
+
+/** Soloing any track silences the rest, which is what makes A/B against the original work. */
+function applyGains(gainNodes: GainNode[], states: TrackState[]) {
+  const anySolo = states.some((state) => state.solo)
+  states.forEach((state, index) => {
+    const gain = gainNodes[index]
+    if (gain) gain.gain.value = !state.muted && (!anySolo || state.solo) ? state.volume : 0
+  })
+}
 
 export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
   const elements = useRef<(HTMLAudioElement | null)[]>([])
@@ -23,19 +34,11 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
   const [playing, setPlaying] = useState(false)
   const [starting, setStarting] = useState(false)
   const [playbackError, setPlaybackError] = useState<string | undefined>(undefined)
-  const [states, setStates] = useState<TrackState[]>(() =>
-    tracks.map(() => ({ volume: 1, muted: false, solo: false })),
-  )
-
-  const anySolo = states.some((state) => state.solo)
+  const [states, setStates] = useState<TrackState[]>(() => tracks.map(() => DEFAULT_TRACK_STATE))
 
   useEffect(() => {
-    states.forEach((state, index) => {
-      const audible = !state.muted && (!anySolo || state.solo)
-      const gain = gainNodes.current[index]
-      if (gain) gain.gain.value = audible ? state.volume : 0
-    })
-  }, [states, anySolo])
+    applyGains(gainNodes.current, states)
+  }, [states])
 
   useEffect(() => {
     if (!playing) return
@@ -47,7 +50,7 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
           element.currentTime = reference.currentTime
         }
       }
-    }, 1000)
+    }, RESYNC_INTERVAL_MS)
     return () => window.clearInterval(id)
   }, [playing])
 
@@ -59,6 +62,10 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
     [],
   )
 
+  /**
+   * Built on first play, not on mount: `createMediaElementSource` may only be called
+   * once per element, and a context created before a gesture starts suspended.
+   */
   function connectAudio() {
     context.current ??= new AudioContext()
     if (gainNodes.current.length > 0) return context.current
@@ -72,11 +79,8 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
         .connect(context.current.destination)
       gainNodes.current.push(gain)
     }
-    states.forEach((state, index) => {
-      const audible = !state.muted && (!anySolo || state.solo)
-      const gain = gainNodes.current[index]
-      if (gain) gain.gain.value = audible ? state.volume : 0
-    })
+    // The gain effect cannot have run for nodes that did not exist yet.
+    applyGains(gainNodes.current, states)
     return context.current
   }
 
@@ -125,7 +129,6 @@ export function StemMixer({ tracks }: { tracks: MixerTrack[] }) {
 
               {/* biome-ignore lint/a11y/useMediaCaption: The separate stems have no dialogue to transcribe. */}
               <audio
-                className="sr-only"
                 preload="metadata"
                 ref={(element) => {
                   elements.current[index] = element

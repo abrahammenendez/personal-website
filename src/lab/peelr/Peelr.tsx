@@ -1,7 +1,15 @@
-import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from 'react'
+import {
+  type ChangeEvent,
+  type DragEvent,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { Button } from '@/components/ui/button'
 import { MAX_DURATION_SECONDS, SAMPLE_RATE, STEMS } from './constants'
 import { type MixerTrack, StemMixer } from './StemMixer'
+import type { StereoBuffer } from './segments'
 import type { Separator } from './separator'
 import { encodeWav } from './wav'
 
@@ -14,22 +22,19 @@ type Phase =
   | { name: 'done'; tracks: MixerTrack[] }
   | { name: 'failed'; message: string }
 
-interface Decoded {
-  left: Float32Array
-  right: Float32Array
+function releaseTracks(urls: RefObject<string[]>) {
+  for (const url of urls.current) URL.revokeObjectURL(url)
+  urls.current = []
 }
 
-function revokeUrls(urls: string[]) {
-  for (const url of urls) URL.revokeObjectURL(url)
-}
-
-// The browser-only worker and runtime stay out of the server bundle.
+// `import.meta.env.SSR` folds to a constant, so the server build drops the import
+// entirely and neither the worker nor ONNX Runtime reaches the Worker script.
 const loadSeparator = import.meta.env.SSR
   ? () => Promise.reject(new Error('peelr runs in the browser only'))
   : () => import('./separator')
 
 /** Decodes to 44.1 kHz stereo, the only rate the model accepts. */
-async function decode(file: File): Promise<Decoded> {
+async function decode(file: File): Promise<StereoBuffer> {
   const bytes = await file.arrayBuffer()
   const context = new AudioContext({ sampleRate: SAMPLE_RATE })
   try {
@@ -54,21 +59,18 @@ export function Peelr() {
   const [phase, setPhase] = useState<Phase>({ name: 'idle' })
   const separator = useRef<Separator | undefined>(undefined)
   const urls = useRef<string[]>([])
+  // Separation outlives the component if a visitor navigates away mid-track, so every
+  // step that allocates a worker or an object URL checks this before it does.
   const mounted = useRef(false)
 
-  function releaseTracks() {
-    revokeUrls(urls.current)
-    urls.current = []
-  }
-
+  // `navigator` does not exist while prerendering, so the check waits for the client.
   useEffect(() => {
     mounted.current = true
     if (!navigator.gpu) setPhase({ name: 'unsupported' })
 
     return () => {
       mounted.current = false
-      revokeUrls(urls.current)
-      urls.current = []
+      releaseTracks(urls)
       separator.current?.dispose()
     }
   }, [])
@@ -78,7 +80,7 @@ export function Peelr() {
       setPhase({ name: 'unsupported' })
       return
     }
-    releaseTracks()
+    releaseTracks(urls)
     setPhase({ name: 'decoding' })
 
     try {
@@ -138,7 +140,7 @@ export function Peelr() {
 
   return (
     <section className="flex flex-col gap-4">
-      {canChooseFile && (
+      {canChooseFile ? (
         <label
           className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center"
           htmlFor="peelr-file"
@@ -147,7 +149,7 @@ export function Peelr() {
         >
           <span className="font-medium">Drop a song, or choose a file</span>
           <span className="text-muted-foreground text-sm">
-            Up to {MAX_DURATION_SECONDS / 60} minutes. The first run downloads about 94 MB, then
+            Up to {MAX_DURATION_SECONDS / 60} minutes. The first run downloads about 96 MB, then
             everything happens on your device and nothing is uploaded.
           </span>
           <input
@@ -158,35 +160,33 @@ export function Peelr() {
             type="file"
           />
         </label>
-      )}
+      ) : null}
 
-      <output aria-live="polite" className="text-sm">
-        {phase.name === 'unsupported' && (
+      <output className="text-sm">
+        {phase.name === 'unsupported' ? (
           <p>This needs WebGPU in Chrome or Edge. Firefox and Safari are not supported yet.</p>
-        )}
-        {phase.name === 'decoding' && <p>Reading the file</p>}
-        {phase.name === 'downloading' && (
+        ) : null}
+        {phase.name === 'decoding' ? <p>Reading the file</p> : null}
+        {phase.name === 'downloading' ? (
           <p>
             Downloading the model
             {phase.total > 0 ? `, ${Math.round((phase.loaded / phase.total) * 100)}%` : ''}
           </p>
-        )}
-        {phase.name === 'separating' && (
+        ) : null}
+        {phase.name === 'separating' ? (
           <p>
             Separating, segment {phase.completed} of {phase.total}. Keep this tab open.
           </p>
-        )}
-        {phase.name === 'failed' && (
-          <p role="alert">Could not separate that file: {phase.message}</p>
-        )}
+        ) : null}
+        {phase.name === 'failed' ? <p>Could not separate that file: {phase.message}</p> : null}
       </output>
 
-      {phase.name === 'done' && (
+      {phase.name === 'done' ? (
         <>
           <StemMixer tracks={phase.tracks} />
           <Button
             onClick={() => {
-              releaseTracks()
+              releaseTracks(urls)
               setPhase({ name: 'idle' })
             }}
             variant="outline"
@@ -194,7 +194,7 @@ export function Peelr() {
             Separate another
           </Button>
         </>
-      )}
+      ) : null}
     </section>
   )
 }

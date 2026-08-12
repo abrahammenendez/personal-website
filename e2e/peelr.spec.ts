@@ -1,10 +1,22 @@
-import { expect, test } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
+
+/**
+ * Forced either way, because headless Chromium may or may not expose WebGPU. Separation
+ * itself needs a real GPU, so it is covered by the unit tests against the Python
+ * fixtures rather than here.
+ */
+function stubWebGpu(page: Page, available: boolean) {
+  return page.addInitScript(
+    (value) => {
+      Object.defineProperty(navigator, 'gpu', { configurable: true, value })
+    },
+    (available ? {} : undefined) as unknown,
+  )
+}
 
 test.describe('/lab/peelr', () => {
   test('explains the WebGPU requirement when it is unavailable', async ({ page }) => {
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, 'gpu', { configurable: true, value: undefined })
-    })
+    await stubWebGpu(page, false)
     await page.goto('/lab/peelr')
 
     await expect(page.getByRole('heading', { level: 1, name: 'peelr' })).toBeVisible()
@@ -13,5 +25,15 @@ test.describe('/lab/peelr', () => {
         'This needs WebGPU in Chrome or Edge. Firefox and Safari are not supported yet.',
       ),
     ).toBeVisible()
+  })
+
+  test('states the limits and takes a file without dragging', async ({ page }) => {
+    await stubWebGpu(page, true)
+    await page.goto('/lab/peelr')
+
+    // Drag and drop sits on top of a real labelled input, so keyboard users are not
+    // locked out.
+    await expect(page.getByLabel(/Drop a song, or choose a file/)).toHaveAttribute('type', 'file')
+    await expect(page.getByText(/Up to 6 minutes/)).toBeVisible()
   })
 })

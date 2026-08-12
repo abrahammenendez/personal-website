@@ -53,7 +53,7 @@ src/
 │   └── lab/           The Lab index, plus one route file per experiment
 ├── lab/             The experiment registry, and one directory per experiment
 ├── components/      Shared components; ui/ holds vendored shadcn primitives
-├── lib/             SEO, theming, Sentry config, security headers
+├── lib/             SEO, theming, Sentry config, security headers, Worker routes
 ├── router.tsx       Router factory and typed Register
 └── styles.css       Tailwind entry, @theme tokens, colour tokens
 ```
@@ -73,6 +73,25 @@ experiment is two edits:**
 Zod validation at the boundary, TanStack Query on the client, and Sentry across
 both. Copy its shape: a pure, tested `logic.ts`, an `api.ts` holding the server
 functions, and a component that consumes them.
+
+`src/lab/peelr/` is the other end of the range: stem separation running on the
+visitor's GPU, so the arithmetic that competitors rent servers for happens in the
+tab. Most of it is ordinary signal processing, tested against fixtures generated
+by the Python it reimplements, which is the only way a subtly wrong transform
+gets caught before it ships as slightly wrong audio.
+
+It needs two things from the platform, both consequences of size.
+
+- **The ONNX model is served from R2**, by `src/lib/peelr-model.ts`, because
+  Workers cap an individual static asset at 25 MiB and the model is an order of
+  magnitude past that. Its URL carries a content hash, so the response can be
+  immutable for a year and a new export is simply a new URL.
+- **ONNX Runtime's 23 MiB WebAssembly binary is a static asset, not a bundled
+  one.** Vite emits a worker into *every* environment that references one, so
+  making that binary a Vite asset puts it in the server bundle and the Worker
+  script blows past Cloudflare's 3 MiB limit. `scripts/copy-ort-assets.mjs`
+  copies it into `public/` instead, and `vite.config.ts` picks the ONNX Runtime
+  build that loads it from a path rather than inlining a reference to it.
 
 Every static route prerenders whether it is linked or not, so `published: false`
 keeps an experiment out of the index and the sitemap while leaving it shareable

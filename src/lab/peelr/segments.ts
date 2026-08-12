@@ -1,5 +1,8 @@
 import { SEGMENT_OVERLAP, SEGMENT_SAMPLES, STEMS, TRANSITION_POWER } from './constants'
 
+/** A local copy on purpose. `fft.ts` explains what importing it costs. */
+const at = (values: Float32Array | Float64Array, index: number): number => values[index] as number
+
 /** `int((1 - overlap) * segment_length)` in `apply.py`. */
 export const SEGMENT_STRIDE = Math.floor((1 - SEGMENT_OVERLAP) * SEGMENT_SAMPLES)
 
@@ -50,9 +53,7 @@ export function triangleWindow(
   for (let i = 0; i < half; i++) weight[i] = i + 1
   for (let i = half; i < segmentLength; i++) weight[i] = segmentLength - i
   const max = Math.max(half, segmentLength - half)
-  for (let i = 0; i < segmentLength; i++) {
-    weight[i] = ((weight[i] as number) / max) ** transitionPower
-  }
+  for (let i = 0; i < segmentLength; i++) weight[i] = (at(weight, i) / max) ** transitionPower
   return weight
 }
 
@@ -93,15 +94,13 @@ export function accumulateSegment(
     const source = stems[s] as StereoBuffer
     const target = accumulator.stems[s] as StereoBuffer
     for (let i = 0; i < length; i++) {
-      const w = window[i] as number
-      target.left[offset + i] = (target.left[offset + i] as number) + (source.left[i] as number) * w
-      target.right[offset + i] =
-        (target.right[offset + i] as number) + (source.right[i] as number) * w
+      const w = at(window, i)
+      target.left[offset + i] = at(target.left, offset + i) + at(source.left, i) * w
+      target.right[offset + i] = at(target.right, offset + i) + at(source.right, i) * w
     }
   }
   for (let i = 0; i < length; i++) {
-    accumulator.weights[offset + i] =
-      (accumulator.weights[offset + i] as number) + (window[i] as number)
+    accumulator.weights[offset + i] = at(accumulator.weights, offset + i) + at(window, i)
   }
 }
 
@@ -110,10 +109,10 @@ export function finaliseAccumulator(accumulator: Accumulator): StereoBuffer[] {
   const { stems, weights, totalSamples } = accumulator
   for (const stem of stems) {
     for (let i = 0; i < totalSamples; i++) {
-      const w = weights[i] as number
+      const w = at(weights, i)
       if (w > 0) {
-        stem.left[i] = (stem.left[i] as number) / w
-        stem.right[i] = (stem.right[i] as number) / w
+        stem.left[i] = at(stem.left, i) / w
+        stem.right[i] = at(stem.right, i) / w
       }
     }
   }
@@ -130,12 +129,12 @@ export function moments(channels: Float32Array[]): Moments {
   let sum = 0
   for (const channel of channels) {
     count += channel.length
-    for (let i = 0; i < channel.length; i++) sum += channel[i] as number
+    for (let i = 0; i < channel.length; i++) sum += at(channel, i)
   }
   const mean = sum / count
   let variance = 0
   for (const channel of channels) {
-    for (let i = 0; i < channel.length; i++) variance += ((channel[i] as number) - mean) ** 2
+    for (let i = 0; i < channel.length; i++) variance += (at(channel, i) - mean) ** 2
   }
   return { mean, std: Math.sqrt(variance / (count - 1)) }
 }
@@ -150,9 +149,7 @@ export function moments(channels: Float32Array[]): Moments {
 export function normaliseInPlace(channels: Float32Array[], m: Moments, epsilon = 1e-5): void {
   const scale = 1 / (epsilon + m.std)
   for (const channel of channels) {
-    for (let i = 0; i < channel.length; i++) {
-      channel[i] = ((channel[i] as number) - m.mean) * scale
-    }
+    for (let i = 0; i < channel.length; i++) channel[i] = (at(channel, i) - m.mean) * scale
   }
 }
 
@@ -160,8 +157,6 @@ export function normaliseInPlace(channels: Float32Array[], m: Moments, epsilon =
 export function denormaliseInPlace(channels: Float32Array[], m: Moments, epsilon = 1e-5): void {
   const scale = epsilon + m.std
   for (const channel of channels) {
-    for (let i = 0; i < channel.length; i++) {
-      channel[i] = (channel[i] as number) * scale + m.mean
-    }
+    for (let i = 0; i < channel.length; i++) channel[i] = at(channel, i) * scale + m.mean
   }
 }

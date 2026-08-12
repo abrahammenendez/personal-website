@@ -9,7 +9,6 @@ export interface DownloadProgress {
 
 export interface FetchModelOptions {
   onProgress?: (progress: DownloadProgress) => void
-  signal?: AbortSignal
   /** Injected in tests. Defaults to the global implementations. */
   fetchImpl?: typeof fetch
   cacheStorage?: CacheStorage
@@ -61,7 +60,7 @@ export async function fetchModel(
   url: string,
   options: FetchModelOptions = {},
 ): Promise<ArrayBuffer> {
-  const { onProgress, signal, fetchImpl = fetch, cacheStorage = globalThis.caches } = options
+  const { onProgress, fetchImpl = fetch, cacheStorage = globalThis.caches } = options
 
   const cache = await openCache(cacheStorage)
   const cached = await readCached(cache, url)
@@ -70,12 +69,12 @@ export async function fetchModel(
     return cached
   }
 
-  const response = await fetchImpl(url, { signal })
+  const response = await fetchImpl(url)
   if (!response.ok) {
     throw new Error(`model download failed: ${response.status} ${response.statusText}`)
   }
 
-  // Tee before consuming: the body can only be read once, and a partial write must
+  // Clone before consuming: the body can only be read once, and a partial write must
   // never land in the cache where a later visit would treat it as a whole model.
   const forCache = cache ? response.clone() : undefined
   const buffer = await readWithProgress(response, onProgress)

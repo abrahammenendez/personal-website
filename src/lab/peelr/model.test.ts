@@ -91,7 +91,6 @@ describe('fetchModel', () => {
       cacheStorage: storage,
     })
 
-    // A full storage costs a repeated download, never a broken feature.
     expect(new Uint8Array(buffer)).toEqual(bytes)
   })
 
@@ -118,8 +117,7 @@ describe('fetchModel', () => {
       onProgress: (p) => totals.push(p.total),
     })
 
-    // The UI has to fall back to segments completed rather than invent a percentage.
-    expect(totals.every((t) => t === 0)).toBe(true)
+    expect(totals.every((total) => total === 0)).toBe(true)
   })
 
   it('throws with the status when the download fails', async () => {

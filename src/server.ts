@@ -11,8 +11,8 @@ import { SENTRY_DSN, SENTRY_ENABLED, SENTRY_TRACES_SAMPLE_RATE } from '@/lib/sen
  */
 const requestHandlerWithSecurityHeaders = {
   async fetch(request: Request) {
-    // Handled before the router, because this is a large binary from R2 rather than a
-    // page, and it must not pay for a render it will never use.
+    // Ahead of the router: this is a large binary streamed from R2, not a page, and it
+    // must not pay for a render it will never use.
     const model = await serveModel(request)
     if (model) return applySecurityHeaders(model)
 

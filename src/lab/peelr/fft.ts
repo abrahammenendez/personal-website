@@ -1,14 +1,15 @@
 import { BINS, CENTER_PAD, FRAME_TRIM, HOP, N_FFT, SPEC_PAD } from './constants'
 
 /**
- * Read a typed array element as a definite number.
+ * Read an element as a definite number. Every index in this file is in range by
+ * construction, but `noUncheckedIndexedAccess` cannot prove it.
  *
- * Every index in this file is in range by construction, but `noUncheckedIndexedAccess`
- * cannot prove it, and a bounds check in the innermost loop of a transform that runs
- * hundreds of times per segment is not worth paying for. This documents the invariant
- * in one place instead of scattering assertions.
+ * `segments.ts` and `pipeline.ts` keep their own copies rather than importing this one.
+ * That is deliberate and measured: sharing it makes the inner loops here 7x slower,
+ * because V8 will not inline through an ES module binding and this runs tens of
+ * millions of times per segment.
  */
-const at = (a: Float32Array | Float64Array, i: number): number => a[i] as number
+const at = (values: Float32Array | Float64Array, index: number): number => values[index] as number
 
 /** A spectrogram, stored as two flat arrays indexed `frame * bins + bin`. */
 export interface Spectrum {

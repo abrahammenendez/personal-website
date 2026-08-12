@@ -1,7 +1,5 @@
-import { MODEL_URL, ORT_ASSET_PREFIX, type Stem } from './constants'
+import type { Stems } from './pipeline'
 import type { WorkerRequest, WorkerResponse } from './protocol'
-
-export type Stems = Record<Stem, { left: Float32Array; right: Float32Array }>
 
 export interface SeparatorEvents {
   onDownload?: (loaded: number, total: number) => void
@@ -11,18 +9,16 @@ export interface SeparatorEvents {
 /** The worker owns the ONNX Runtime session, so later tracks reuse it. */
 export class Separator {
   private readonly worker: Worker
-  private ready: Promise<void> | undefined
+  private ready: Promise<unknown> | undefined
 
   constructor(private readonly events: SeparatorEvents = {}) {
     // Vite rewrites this form at build time; a bare string path would not be bundled.
     this.worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
   }
 
-  /** Downloads the model and builds the session. */
-  async init(modelUrl: string = MODEL_URL, wasmPrefix: string = ORT_ASSET_PREFIX): Promise<void> {
-    this.ready ??= this.request({ type: 'init', modelUrl, wasmPrefix }, (message) =>
-      message.type === 'ready' ? { done: true, value: undefined } : undefined,
-    )
+  /** Downloads the model and builds the session. A failure leaves a retry possible. */
+  async init(): Promise<void> {
+    this.ready ??= this.request({ type: 'init' }, 'ready')
     try {
       await this.ready
     } catch (error) {
@@ -33,12 +29,12 @@ export class Separator {
 
   async separate(left: Float32Array, right: Float32Array): Promise<Stems> {
     await this.init()
-    return this.request(
-      { type: 'separate', left, right },
-      (message) => (message.type === 'done' ? { done: true, value: message.stems } : undefined),
+    const done = await this.request({ type: 'separate', left, right }, 'done', [
       // The page no longer needs its copy once the worker has it.
-      [left.buffer as ArrayBuffer, right.buffer as ArrayBuffer],
-    )
+      left.buffer as ArrayBuffer,
+      right.buffer as ArrayBuffer,
+    ])
+    return done.stems
   }
 
   /** Releases the session and its GPU buffers. */
@@ -46,12 +42,12 @@ export class Separator {
     this.worker.terminate()
   }
 
-  private request<T>(
+  private request<T extends WorkerResponse['type']>(
     message: WorkerRequest,
-    resolveOn: (response: WorkerResponse) => { done: true; value: T } | undefined,
+    settleOn: T,
     transfer: Transferable[] = [],
-  ): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
+  ): Promise<Extract<WorkerResponse, { type: T }>> {
+    return new Promise((resolve, reject) => {
       const onMessage = (event: MessageEvent<WorkerResponse>) => {
         const response = event.data
         if (response.type === 'download') {
@@ -67,10 +63,9 @@ export class Separator {
           reject(new Error(response.message))
           return
         }
-        const settled = resolveOn(response)
-        if (settled) {
+        if (response.type === settleOn) {
           cleanup()
-          resolve(settled.value)
+          resolve(response as Extract<WorkerResponse, { type: T }>)
         }
       }
       const onError = (event: ErrorEvent) => {

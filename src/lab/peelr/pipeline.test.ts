@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { BINS, FRAMES, SAMPLE_RATE, SEGMENT_SAMPLES, STEMS } from './constants'
-import { demucsSpec } from './fft'
+import { demucsSpec, type Spectrum } from './fft'
 import { type ModelInput, type ModelOutput, type RunModel, separate } from './pipeline'
 import { moments } from './segments'
 
@@ -22,6 +22,24 @@ const silentModel: RunModel = async () => ({
   freq: new Float32Array(STEMS.length * SPEC_LENGTH),
   time: new Float32Array(STEMS.length * TIME_LENGTH),
 })
+
+/** The bin-major `[4, BINS, FRAMES]` layout the model expects, before normalisation. */
+function flattenBinMajor(spectrum: Spectrum): Float32Array {
+  const stride = BINS * FRAMES
+  const flat = new Float32Array(SPEC_LENGTH)
+  for (let bin = 0; bin < BINS; bin++) {
+    for (let frame = 0; frame < FRAMES; frame++) {
+      const re = spectrum.re[frame * BINS + bin] as number
+      const im = spectrum.im[frame * BINS + bin] as number
+      const target = bin * FRAMES + frame
+      flat[target] = re
+      flat[stride + target] = im
+      flat[2 * stride + target] = re
+      flat[3 * stride + target] = im
+    }
+  }
+  return flat
+}
 
 describe('separate', () => {
   it('rejects mismatched channel lengths', async () => {
@@ -55,36 +73,14 @@ describe('separate', () => {
 
     await separate(source, source, spy)
 
-    // Rebuild what the pipeline should have sent, then undo its normalisation.
+    // Rebuild what the pipeline should have sent, then apply the same normalisation.
     const padded = new Float32Array(SEGMENT_SAMPLES)
     padded.set(source)
-    const expected = demucsSpec(padded)
+    const expected = flattenBinMajor(demucsSpec(padded))
+    const m = moments([expected])
 
-    const flat = new Float32Array(SPEC_LENGTH)
-    for (let bin = 0; bin < BINS; bin++) {
-      for (let frame = 0; frame < FRAMES; frame++) {
-        flat[bin * FRAMES + frame] = expected.re[frame * BINS + bin] as number
-      }
-    }
-    const m = moments([
-      (() => {
-        const all = new Float32Array(SPEC_LENGTH)
-        for (let bin = 0; bin < BINS; bin++) {
-          for (let frame = 0; frame < FRAMES; frame++) {
-            const src = frame * BINS + bin
-            all[bin * FRAMES + frame] = expected.re[src] as number
-            all[BINS * FRAMES + bin * FRAMES + frame] = expected.im[src] as number
-            all[2 * BINS * FRAMES + bin * FRAMES + frame] = expected.re[src] as number
-            all[3 * BINS * FRAMES + bin * FRAMES + frame] = expected.im[src] as number
-          }
-        }
-        return all
-      })(),
-    ])
-
-    // Spot-check the first channel against the normalised reference.
     for (let i = 0; i < 512; i++) {
-      const want = ((flat[i] as number) - m.mean) / (1e-5 + m.std)
+      const want = ((expected[i] as number) - m.mean) / (1e-5 + m.std)
       expect(Math.abs((captured?.[i] as number) - want)).toBeLessThan(1e-4)
     }
   })
@@ -103,8 +99,8 @@ describe('separate', () => {
     const total = 100_000
     const stems = await separate(tone(total), tone(total), silentModel)
 
-    expect(stems).toHaveLength(STEMS.length)
-    for (const stem of stems) {
+    expect(Object.keys(stems)).toEqual([...STEMS])
+    for (const stem of Object.values(stems)) {
       expect(stem.left.length).toBe(total)
       expect(stem.right.length).toBe(total)
     }
@@ -130,21 +126,14 @@ describe('separate', () => {
 
     const stems = await separate(tone(total), tone(total), model)
     const middle = Math.floor(total / 2)
+    // Denormalisation adds a common offset and a positive scale, so the constants stay
+    // ordered: drums below bass below other below vocals, and left below right in each.
+    const lefts = STEMS.map((stem) => stems[stem].left[middle] as number)
+    const rights = STEMS.map((stem) => stems[stem].right[middle] as number)
 
+    expect(lefts).toEqual([...lefts].toSorted((a, b) => a - b))
     for (let s = 0; s < STEMS.length; s++) {
-      const stem = stems[s] as { left: Float32Array; right: Float32Array }
-      // The constants are denormalised on the way out, so compare the gap rather than
-      // the absolute value: right minus left is one unit before and after scaling.
-      const gap = (stem.right[middle] as number) - (stem.left[middle] as number)
-      expect(gap).toBeGreaterThan(0)
+      expect(rights[s] as number).toBeGreaterThan(lefts[s] as number)
     }
-  })
-
-  it('honours an abort signal', async () => {
-    const controller = new AbortController()
-    controller.abort()
-    await expect(
-      separate(tone(100_000), tone(100_000), silentModel, { signal: controller.signal }),
-    ).rejects.toThrow()
   })
 })

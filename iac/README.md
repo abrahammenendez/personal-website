@@ -1,8 +1,9 @@
 # iac
 
 The Cloudflare zone for my personal website: its DNS records, the `www` to apex
-redirect, and the R2 bucket holding peelr's model. Anything Workers-shaped stays
-in [`wrangler.jsonc`](../wrangler.jsonc) and is applied by the deploy job, so
+redirect, and the R2 bucket that experiments too large to ship as static assets
+serve from. Anything Workers-shaped stays in
+[`wrangler.jsonc`](../wrangler.jsonc) and is applied by the deploy job, so
 nothing here touches the Worker, its routes, or its custom domain. The bucket is
 the one exception by necessity: bindings live with the Worker, but the bucket
 they point at has to exist first.
@@ -40,8 +41,8 @@ Wrangler needs it carries DNS and single redirect edit rights on this zone, plus
 
 R2 is needed in three separate places, and all three fail with a bare
 `Authentication error [code: 10000]` without it: OpenTofu creating the bucket,
-`wrangler deploy` checking that a bound bucket exists, and uploading the model
-object. Editing an existing token's permissions keeps the same secret, so the
+`wrangler deploy` checking that a bound bucket exists, and uploading an object
+to it. Editing an existing token's permissions keeps the same secret, so the
 GitHub secret does not have to be updated.
 
 The R2 keys are S3-compatible credentials for the state bucket, not a

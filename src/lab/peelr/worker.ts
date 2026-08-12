@@ -1,5 +1,4 @@
-import type { InferenceSession } from 'onnxruntime-web/webgpu'
-import { BINS, FRAMES, SEGMENT_SAMPLES, STEMS, type Stem } from './constants'
+import { BINS, FRAMES, MODEL_URL, ORT_ASSET_PREFIX, SEGMENT_SAMPLES } from './constants'
 import { fetchModel } from './model'
 import { type ModelOutput, type RunModel, separate } from './pipeline'
 import type { WorkerRequest, WorkerScope } from './protocol'
@@ -9,7 +8,6 @@ const scope = self as unknown as WorkerScope
 const SPEC_DIMS = [1, 4, BINS, FRAMES]
 const MIX_DIMS = [1, 2, SEGMENT_SAMPLES]
 
-let session: InferenceSession | undefined
 let runModel: RunModel | undefined
 
 /**
@@ -17,26 +15,24 @@ let runModel: RunModel | undefined
  * and from the `webgpu` subpath rather than the package root, whose default export
  * still loads the deprecated JSEP runtime.
  */
-async function init(modelUrl: string, wasmPrefix: string): Promise<void> {
+async function init(): Promise<void> {
   const ort = await import('onnxruntime-web/webgpu')
-  ort.env.wasm.wasmPaths = wasmPrefix
+  ort.env.wasm.wasmPaths = ORT_ASSET_PREFIX
 
-  const buffer = await fetchModel(modelUrl, {
+  const buffer = await fetchModel(MODEL_URL, {
     onProgress: ({ loaded, total }) => scope.postMessage({ type: 'download', loaded, total }),
   })
 
-  session = await ort.InferenceSession.create(buffer, {
+  const session = await ort.InferenceSession.create(buffer, {
     executionProviders: ['webgpu'],
     graphOptimizationLevel: 'all',
   })
 
   runModel = async ({ specNorm, mixNorm }) => {
-    if (!session) throw new Error('session not initialised')
-    const feeds = {
+    const results = await session.run({
       spec_norm: new ort.Tensor('float32', specNorm, SPEC_DIMS),
       mix_norm: new ort.Tensor('float32', mixNorm, MIX_DIMS),
-    }
-    const results = await session.run(feeds)
+    })
     const freq = results.freq?.data
     const time = results.time?.data
     if (!(freq instanceof Float32Array) || !(time instanceof Float32Array)) {
@@ -55,24 +51,21 @@ async function run(left: Float32Array, right: Float32Array): Promise<void> {
     onProgress: (completed, total) => scope.postMessage({ type: 'progress', completed, total }),
   })
 
-  const named = {} as Record<Stem, { left: Float32Array; right: Float32Array }>
-  const transfer: Transferable[] = []
-  STEMS.forEach((stem, index) => {
-    const buffers = stems[index] as { left: Float32Array; right: Float32Array }
-    named[stem] = buffers
-    // Transfer rather than clone: each stem is tens of megabytes, and cloning would
-    // briefly hold two copies of every one of them.
-    transfer.push(buffers.left.buffer as ArrayBuffer, buffers.right.buffer as ArrayBuffer)
-  })
+  // Transfer rather than clone: each stem is tens of megabytes, and cloning would
+  // briefly hold two copies of every one of them.
+  const transfer = Object.values(stems).flatMap((stem) => [
+    stem.left.buffer as ArrayBuffer,
+    stem.right.buffer as ArrayBuffer,
+  ])
 
-  scope.postMessage({ type: 'done', stems: named }, transfer)
+  scope.postMessage({ type: 'done', stems }, transfer)
 }
 
 scope.addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
   try {
     const request = event.data
-    if (request.type === 'init') await init(request.modelUrl, request.wasmPrefix)
-    else if (request.type === 'separate') await run(request.left, request.right)
+    if (request.type === 'init') await init()
+    else await run(request.left, request.right)
   } catch (error) {
     scope.postMessage({
       type: 'error',

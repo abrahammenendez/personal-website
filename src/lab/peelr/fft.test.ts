@@ -23,18 +23,31 @@ function signal(channel: 0 | 1, n = SEGMENT_SAMPLES): Float32Array {
   return x
 }
 
-function stats(a: ArrayLike<number>) {
+interface Summary {
+  len: number
+  std: number
+  absmax: number
+}
+
+/** `std` divides by `n`, which is what numpy's default `ddof=0` does. */
+function stats(buffers: ArrayLike<number>[]): Summary {
+  let len = 0
   let sum = 0
   let absmax = 0
-  for (let i = 0; i < a.length; i++) {
-    const v = a[i] as number
-    sum += v
-    absmax = Math.max(absmax, Math.abs(v))
+  for (const values of buffers) {
+    len += values.length
+    for (let i = 0; i < values.length; i++) {
+      const value = values[i] as number
+      sum += value
+      absmax = Math.max(absmax, Math.abs(value))
+    }
   }
-  const mean = sum / a.length
+  const mean = sum / len
   let variance = 0
-  for (let i = 0; i < a.length; i++) variance += ((a[i] as number) - mean) ** 2
-  return { mean, std: Math.sqrt(variance / a.length), absmax, sum }
+  for (const values of buffers) {
+    for (let i = 0; i < values.length; i++) variance += ((values[i] as number) - mean) ** 2
+  }
+  return { len, std: Math.sqrt(variance / len), absmax }
 }
 
 /** Both sides come from indexed access, so both are `number | undefined` to the checker. */
@@ -50,18 +63,38 @@ function expectClose(
   expect(difference, `${label}: ${actual} vs ${expected}`).toBeLessThan(tolerance)
 }
 
+/**
+ * Head and tail slices leave the middle of a 343,980-sample buffer unchecked, so every
+ * comparison also goes through the whole-buffer statistics the generator recorded.
+ *
+ * Deviation and peak rather than mean or sum: cancellation drives the sum of a
+ * spectrogram to near zero, where it would stay however wrong the values were.
+ *
+ * The comparison is relative, and bounded by the reference rather than by us. Fixtures
+ * come from float32 tensors, so nothing here can beat that format's 1.2e-7 resolution;
+ * the observed errors are 3e-15 for the signal and 5e-8 through the transforms.
+ */
+function expectSummary(buffers: ArrayLike<number>[], ref: Summary, label: string) {
+  const got = stats(buffers)
+  expect(got.len, `${label} len`).toBe(ref.len)
+  for (const key of ['std', 'absmax'] as const) {
+    const error = Math.abs(got[key] - ref[key]) / ref[key]
+    expect(error, `${label} ${key}: ${got[key]} vs ${ref[key]}`).toBeLessThan(1e-6)
+  }
+}
+
 describe('test signal', () => {
   it('reproduces the values the fixtures were generated from', () => {
     for (const channel of [0, 1] as const) {
       const ref = reference.signal[`ch${channel}`]
       const got = signal(channel)
-      expect(got.length).toBe(ref.len)
+      expectSummary([got], ref, `ch${channel}`)
       for (let i = 0; i < ref.head.length; i++) {
         expectClose(got[i], ref.head[i], 1e-6, `ch${channel} head[${i}]`)
       }
       for (let i = 0; i < ref.tail.length; i++) {
-        const at = got.length - ref.tail.length + i
-        expectClose(got[at], ref.tail[i], 1e-6, `ch${channel} tail[${i}]`)
+        const index = got.length - ref.tail.length + i
+        expectClose(got[index], ref.tail[i], 1e-6, `ch${channel} tail[${i}]`)
       }
     }
   })
@@ -117,8 +150,10 @@ describe('demucsSpec', () => {
       expectClose(atFixtureIndex(spec.im, i), ref.imag.head[i], 2e-3, `im[${i}]`)
     }
 
-    expectClose(stats(spec.re).absmax, ref.real.absmax, 1e-2, 'real absmax')
-    expectClose(stats(spec.im).absmax, ref.imag.absmax, 1e-2, 'imag absmax')
+    // The fixture covers the stereo pair, so the summary needs both channels.
+    const other = demucsSpec(signal(1))
+    expectSummary([spec.re, other.re], ref.real, 'real')
+    expectSummary([spec.im, other.im], ref.imag, 'imag')
   })
 })
 
@@ -150,6 +185,6 @@ describe('demucsIspec', () => {
     for (let i = 0; i < ref.tail.length; i++) {
       expectClose(back[back.length - ref.tail.length + i], ref.tail[i], 1e-4, `ispec tail[${i}]`)
     }
-    expectClose(stats(back).absmax, ref.absmax, 1e-3, 'ispec absmax')
+    expectSummary([back], ref, 'ispec')
   })
 })
