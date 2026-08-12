@@ -5,5 +5,5 @@ numpy==2.0.2
 onnx==1.19.1
 onnxconverter-common==1.16.0
 onnxruntime==1.19.2
-torch==2.8.0
+torch==2.13.0
 torchaudio==2.8.0
