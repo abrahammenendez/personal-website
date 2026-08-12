@@ -26,7 +26,7 @@ test.describe('/lab/peelr', () => {
   test('carries the licence notice for the weights it redistributes', async ({ page }) => {
     await page.goto('/lab/peelr')
 
-    const credit = page.getByText(/Separation by Demucs/)
+    const credit = page.getByText(/Model: Demucs/)
     await expect(credit).toContainText('MIT licensed')
     await expect(credit.getByRole('link', { name: 'Demucs' })).toHaveAttribute(
       'href',
