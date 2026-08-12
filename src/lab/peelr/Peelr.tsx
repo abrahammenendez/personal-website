@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { MAX_DURATION_SECONDS, SAMPLE_RATE, STEMS, type Stem } from './constants'
+import { DEMO_TRACK, MAX_DURATION_SECONDS, SAMPLE_RATE, STEMS, type Stem } from './constants'
 import { waveformPath } from './peaks'
 import type { Stems } from './pipeline'
 import type { StemBuffers } from './player'
@@ -25,6 +25,7 @@ interface Mix {
 type Phase =
   | { name: 'idle' }
   | { name: 'unsupported' }
+  | { name: 'fetching' }
   | { name: 'decoding' }
   | { name: 'downloading'; loaded: number; total: number }
   | { name: 'separating'; completed: number; total: number }
@@ -188,10 +189,24 @@ export function Peelr() {
       if (run.current !== token) return
       separator.current?.dispose()
       separator.current = undefined
-      setPhase({
-        name: 'failed',
-        message: error instanceof Error ? error.message : String(error),
-      })
+      const detail = error instanceof Error ? error.message : String(error)
+      setPhase({ name: 'failed', message: `Could not separate that file. ${detail}` })
+    }
+  }
+
+  async function onDemoTrack() {
+    const token = ++run.current
+    setPhase({ name: 'fetching' })
+    try {
+      const response = await fetch(DEMO_TRACK.url)
+      if (!response.ok) throw new Error(`The server responded ${response.status}.`)
+      const file = new File([await response.blob()], DEMO_TRACK.filename)
+      if (run.current !== token) return
+      await onFile(file)
+    } catch (error) {
+      if (run.current !== token) return
+      const detail = error instanceof Error ? error.message : String(error)
+      setPhase({ name: 'failed', message: `Could not load the demo track. ${detail}` })
     }
   }
 
@@ -213,39 +228,51 @@ export function Peelr() {
   return (
     <section className="flex flex-col gap-4">
       {phase.name === 'idle' || phase.name === 'failed' ? (
-        <label
-          className={cn(
-            'flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center transition-colors',
-            dragging && 'border-foreground bg-accent',
-          )}
-          htmlFor="peelr-file"
-          onDragLeave={() => setDragging(false)}
-          onDragOver={(event) => {
-            event.preventDefault()
-            setDragging(true)
-          }}
-          onDrop={onDrop}
-        >
-          <span className="font-medium">Drop a song here, or choose one</span>
-          {/* The privacy and on-device claims belong to the page description, once. */}
-          <span className="text-muted-foreground text-note">
-            Up to {MAX_DURATION_SECONDS / 60} minutes. The first run downloads the model, about 90
-            MB.
-          </span>
-          <input
-            accept="audio/*"
-            className="sr-only"
-            id="peelr-file"
-            onChange={onFileInput}
-            type="file"
-          />
-        </label>
+        <div className="flex flex-col gap-3">
+          <label
+            className={cn(
+              'flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed p-8 text-center transition-colors',
+              dragging && 'border-foreground bg-accent',
+            )}
+            htmlFor="peelr-file"
+            onDragLeave={() => setDragging(false)}
+            onDragOver={(event) => {
+              event.preventDefault()
+              setDragging(true)
+            }}
+            onDrop={onDrop}
+          >
+            <span className="font-medium">Drop a song here</span>
+            <span className="text-muted-foreground text-note">
+              Up to {MAX_DURATION_SECONDS / 60} minutes. The first run downloads the model, about 90
+              MB.
+            </span>
+            <input
+              accept="audio/*"
+              className="sr-only"
+              id="peelr-file"
+              onChange={onFileInput}
+              type="file"
+            />
+          </label>
+
+          {/* Outside the label: a button inside it would open the file picker too. */}
+          <Button
+            className="self-center"
+            onClick={() => void onDemoTrack()}
+            size="sm"
+            variant="outline"
+          >
+            Try a demo track
+          </Button>
+        </div>
       ) : null}
 
       <output className="flex flex-col gap-2 text-note">
         {phase.name === 'unsupported' ? (
           <p>This needs WebGPU in Chrome or Edge. Firefox and Safari are not supported yet.</p>
         ) : null}
+        {phase.name === 'fetching' ? <p>Fetching the demo track…</p> : null}
         {phase.name === 'decoding' ? <p>Reading the file…</p> : null}
         {phase.name === 'downloading' ? (
           <Progress
@@ -266,7 +293,7 @@ export function Peelr() {
             <p className="text-muted-foreground">Keep this tab open.</p>
           </>
         ) : null}
-        {phase.name === 'failed' ? <p>Could not separate that file. {phase.message}</p> : null}
+        {phase.name === 'failed' ? <p>{phase.message}</p> : null}
       </output>
 
       {working ? (

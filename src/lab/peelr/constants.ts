@@ -68,6 +68,17 @@ export const ORT_ASSET_PREFIX = '/peelr/ort/'
  */
 export const MAX_DURATION_SECONDS = 6 * 60
 
+/**
+ * A song for visitors who have none to hand, from
+ * https://pixabay.com/music/rock-lyrium-2025-we-ll-rise-up-high-568378/. The Pixabay
+ * licence allows serving it and asks for no credit.
+ */
+export const DEMO_TRACK = {
+  url: '/peelr/demo.mp3',
+  /** Names the mixer and every stem downloaded from it. */
+  filename: "We'll rise up high.mp3",
+}
+
 export const STEMS = ['drums', 'bass', 'other', 'vocals'] as const
 
 export type Stem = (typeof STEMS)[number]
