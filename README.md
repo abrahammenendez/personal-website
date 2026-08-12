@@ -85,7 +85,7 @@ by the Python it reimplements, which is the only way a subtly wrong transform
 gets caught before it ships as slightly wrong audio. [`model/peelr/`](./model/peelr)
 holds that Python, including the export and both fixture generators.
 
-It needs two things from the platform, both consequences of size.
+It needs three things from the platform, all consequences of size.
 
 - **The ONNX model is served from R2**, by `src/worker/peelr-model.ts`, because
   Workers cap an individual static asset at 25 MiB and the model is several
@@ -97,6 +97,13 @@ It needs two things from the platform, both consequences of size.
   Cloudflare's 3 MiB limit. `scripts/copy-ort-assets.mjs` copies it into
   `public/` instead, and `vite.config.ts` picks the ONNX Runtime build that
   loads it from a path rather than inlining a reference to it.
+- **Playback holds the stems in memory instead of streaming them.** An `<audio>`
+  element per stem would stream from disk, but nothing in the platform keeps
+  several of them in step: `mediagroup`, the attribute that existed for exactly
+  this, was dropped from HTML and never shipped in Chrome, so the elements drift
+  apart and have to be dragged back. Sources sharing one `AudioContext` cannot
+  drift, so `src/lab/peelr/player.ts` spends the memory rather than the accuracy,
+  and the worker is disposed the moment separation ends to help pay for it.
 
 Every static route prerenders whether it is linked or not, so `published: false`
 keeps an experiment out of the index while leaving it shareable by link. Biome's

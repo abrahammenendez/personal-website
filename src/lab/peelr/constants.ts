@@ -63,7 +63,8 @@ export const ORT_ASSET_PREFIX = '/peelr/ort/'
 
 /**
  * Four stems plus the original, held as float samples, is roughly 127 MB per buffer at
- * this length. Longer inputs exhaust a laptop tab before they finish.
+ * this length, and playback keeps every one of them for as long as the mixer is on
+ * screen. Longer inputs exhaust a laptop tab.
  */
 export const MAX_DURATION_SECONDS = 6 * 60
 
