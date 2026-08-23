@@ -3,14 +3,29 @@ import { expect, test } from '@playwright/test'
 const PAGES = ['/', '/lab', '/lab/peelr', '/lab/hello-server']
 
 test.describe('site header', () => {
-  test('offers the same two destinations on every page', async ({ page }) => {
+  test('offers the same destinations on every page', async ({ page }) => {
     for (const path of PAGES) {
       await page.goto(path)
 
       const nav = page.getByRole('navigation', { name: 'Main' })
       await expect(nav.getByRole('link', { name: 'Home' })).toBeVisible()
       await expect(nav.getByRole('link', { name: 'Lab' })).toBeVisible()
+      await expect(nav.getByRole('link', { name: 'Source' })).toBeVisible()
     }
+  })
+
+  test('opens the source link in a new tab pointing at the repo', async ({ page }) => {
+    await page.goto('/')
+
+    const source = page.getByRole('navigation', { name: 'Main' }).getByRole('link', {
+      name: 'Source',
+    })
+    await expect(source).toHaveAttribute(
+      'href',
+      'https://github.com/abrahammenendez/personal-website',
+    )
+    await expect(source).toHaveAttribute('target', '_blank')
+    await expect(source).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
   test('marks the current page for assistive tech', async ({ page }) => {
@@ -56,6 +71,9 @@ test.describe('site header', () => {
 
     expect(html).toMatch(/<a[^>]+href="\/"[^>]*>Home<\/a>/)
     expect(html).toMatch(/<a[^>]+href="\/lab"[^>]*>Lab<\/a>/)
+    expect(html).toMatch(
+      /<a[^>]+href="https:\/\/github\.com\/abrahammenendez\/personal-website"[^>]*>Source<\/a>/,
+    )
   })
 })
 

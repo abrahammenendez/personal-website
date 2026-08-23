@@ -1,4 +1,5 @@
 import { Link, type LinkProps } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { ThemeToggle } from '@/components/ThemeToggle'
 
 export function SiteHeader() {
@@ -10,6 +11,9 @@ export function SiteHeader() {
           Home
         </NavLink>
         <NavLink to="/lab">Lab</NavLink>
+        <ExternalNavLink href="https://github.com/abrahammenendez/personal-website">
+          Source
+        </ExternalNavLink>
       </nav>
       <ThemeToggle />
     </header>
@@ -35,5 +39,19 @@ function NavLink({
     >
       {children}
     </Link>
+  )
+}
+
+/** Leaving the SPA, so a plain anchor rather than the router's `Link`. */
+function ExternalNavLink({ href, children }: Readonly<{ href: string; children: ReactNode }>) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="-my-1 py-1 font-heading font-medium text-meta text-muted-foreground transition-colors hover:text-foreground hover:no-underline"
+    >
+      {children}
+    </a>
   )
 }
