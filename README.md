@@ -85,25 +85,26 @@ by the Python it reimplements, which is the only way a subtly wrong transform
 gets caught before it ships as slightly wrong audio. [`model/peelr/`](./model/peelr)
 holds that Python, including the export and both fixture generators.
 
-It needs three things from the platform, all consequences of size.
+Its size forces three platform decisions.
 
-- **The ONNX model is served from R2**, by `src/worker/peelr-model.ts`, because
+- The ONNX model is served from R2, by `src/worker/peelr-model.ts`, because
   Workers cap an individual static asset at 25 MiB and the model is several
   times that. Its URL carries a content hash, so the response can be immutable
   for a year and a new export is simply a new URL.
-- **ONNX Runtime's 23 MiB WebAssembly binary is a static asset, not a bundled
-  one.** Vite emits a Web Worker's assets into *every* environment, the server
-  one included, so making that binary a Vite asset pushes the Worker script past
-  Cloudflare's 3 MiB limit. `scripts/copy-ort-assets.mjs` copies it into
-  `public/` instead, and `vite.config.ts` picks the ONNX Runtime build that
-  loads it from a path rather than inlining a reference to it.
-- **Playback holds the stems in memory instead of streaming them.** An `<audio>`
+- ONNX Runtime's 23 MiB WebAssembly binary is a static asset rather than a
+  bundled one. Vite emits a Web Worker's assets into *every* environment, the
+  server one included, so making that binary a Vite asset pushes the Worker
+  script past the free plan's 3 MB limit. `scripts/copy-ort-assets.mjs` copies
+  it into `public/` instead, and `vite.config.ts` picks the ONNX Runtime build
+  that loads it from a path instead of inlining a reference to it.
+- Playback holds the stems in memory instead of streaming them. An `<audio>`
   element per stem would stream from disk, but nothing in the platform keeps
   several of them in step: `mediagroup`, the attribute that existed for exactly
-  this, was dropped from HTML and never shipped in Chrome, so the elements drift
-  apart and have to be dragged back. Sources sharing one `AudioContext` cannot
-  drift, so `src/lab/peelr/player.ts` spends the memory rather than the accuracy,
-  and the worker is disposed the moment separation ends to help pay for it.
+  this, left the HTML spec in 2016 and never shipped enabled in Chrome, so the
+  elements drift apart and have to be dragged back. Sources sharing one
+  `AudioContext` cannot drift, so `src/lab/peelr/player.ts` accepts the memory
+  cost, and the worker is disposed the moment separation ends to claw some of
+  it back.
 
 Every static route prerenders whether it is linked or not, so `published: false`
 keeps an experiment out of the index while leaving it shareable by link. Biome's
@@ -116,13 +117,13 @@ reachable only through its barrel.
 and the page-specific OG tags come from each route's own `head()`, via
 `buildPageHead` or, for an experiment, `buildExperimentPageHead`.
 
-This is not a style preference. TanStack Router de-duplicates `meta` tags by
-`name`/`property` across nested matches, but never `links`, so the root cannot
-supply a fallback canonical without every page ending up with two. A route that
-forgets its `head()` ships with no canonical instead of a wrong one, and
-`e2e/seo.spec.ts` asserts exactly one per page as the guard.
+TanStack Router de-duplicates `meta` tags by `name`/`property` across nested
+matches, but never `links`, so the root cannot supply a fallback canonical
+without every page ending up with two. A route that forgets its `head()` ships
+with no canonical instead of a wrong one, and `e2e/seo.spec.ts` asserts exactly
+one per page as the guard.
 
-Two related traps the e2e suite also pins down: `og:image` must be absolute, or
+The e2e suite pins down two related traps: `og:image` must be absolute, or
 link previews break; and the URL a page is *served* at must be the one its
 canonical claims, which is why `wrangler.jsonc` sets
 `html_handling: "drop-trailing-slash"`. The prerenderer writes
@@ -145,19 +146,18 @@ side.
 
 Consequences before touching it:
 
-- **Prefer the `dark:` variant over reading the scheme in React.**
-  `ThemeToggle` renders both glyphs and lets CSS pick one, so the prerendered
-  HTML never guesses. `ui/sonner.tsx` is the one exception, because sonner
-  needs the value as a prop, and it subscribes via a `MutationObserver` on the
-  class.
-- **Cookies and server functions are the wrong tool here**, however often
+- **Prefer the `dark:` variant over reading the scheme in React.** `ThemeToggle`
+  renders both glyphs and lets CSS pick one, so the prerendered HTML never
+  guesses. `ui/sonner.tsx` is the one exception, because sonner needs the value
+  as a prop, and it subscribes via a `MutationObserver` on the class.
+- Cookies and server functions are the wrong tool here, however often
   they're recommended for TanStack Start. Cloudflare serves the prerendered
   files from the edge without invoking the Worker, so per-request theming has no
   request to hook.
 - **All base styles live in `@layer base`.** Unlayered declarations beat every
   cascade layer regardless of specificity, so a bare `body {}` rule would
   silently override the `bg-background` utility meant to win.
-- **`--muted-foreground` is tuned on APCA `Lc`, not the WCAG 2 ratio**, which
+- `--muted-foreground` is tuned on APCA `Lc` rather than the WCAG 2 ratio, which
   ignores type size, weight and polarity and flatters light-on-dark. Body copy
   is set in EB Garamond, a light-stroked serif that a bare WCAG pass leaves
   looking washed out.
@@ -190,18 +190,18 @@ production is deployed only by CI.
 `verify.yaml` is a reusable workflow, so the checks gating a merge are exactly
 the ones gating a deploy.
 
-Two decisions worth recording:
+Worth recording:
 
-- **semantic-release is installed in the release job, not as a devDependency.**
+- semantic-release is installed in the release job, not as a devDependency.
   Its plugins need `conventional-commits-filter@^5` while `@commitlint/cli`
   needs `^6`; in one dependency tree npm produces a lockfile `npm ci` rejects.
-- **The custom domain is declared in `wrangler.jsonc`**, so the binding is
+- The custom domain is declared in `wrangler.jsonc`, so the binding is
   versioned with the code and applied by the deploy job.
 
 Cloudflare credentials live in the repository's `prod`
 [GitHub Environment](https://docs.github.com/actions/deployment/targeting-different-environments/using-environments-for-deployment),
 never in the repo. `CLOUDFLARE_API_TOKEN` is a secret; `CLOUDFLARE_ACCOUNT_ID`
-is a variable, since it identifies rather than authenticates.
+is a variable, since it only identifies the account.
 
 ## Infrastructure
 
