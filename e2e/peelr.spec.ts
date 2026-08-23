@@ -1,5 +1,11 @@
 import { expect, type Page, test } from '@playwright/test'
 
+/**
+ * `DEMO_TRACK.url`, copied because importing `@/lab/peelr` here also loads `Peelr.tsx`,
+ * and its `import.meta.env` is undefined outside Vite.
+ */
+const DEMO_TRACK_URL = '/peelr/demo.mp3'
+
 /** Forced either way, because headless Chromium may or may not expose WebGPU. */
 function stubWebGpu(page: Page, available: boolean) {
   return page.addInitScript(
@@ -26,7 +32,7 @@ test.describe('/lab/peelr', () => {
   test('carries the licence notice for the weights it redistributes', async ({ page }) => {
     await page.goto('/lab/peelr')
 
-    const credit = page.getByText(/Separation by Demucs/)
+    const credit = page.getByText(/Model: Demucs/)
     await expect(credit).toContainText('MIT licensed')
     await expect(credit.getByRole('link', { name: 'Demucs' })).toHaveAttribute(
       'href',
@@ -40,7 +46,19 @@ test.describe('/lab/peelr', () => {
 
     // Drag and drop sits on top of a real labelled input, so keyboard users are not
     // locked out.
-    await expect(page.getByLabel(/Drop a song, or choose a file/)).toHaveAttribute('type', 'file')
+    await expect(page.getByLabel(/Drop a song here/)).toHaveAttribute('type', 'file')
     await expect(page.getByText(/Up to 6 minutes/)).toBeVisible()
+    await expect(page.getByText(/downloads the model, about 90 MB/)).toBeVisible()
+  })
+
+  test('offers a demo track to visitors with no song of their own', async ({ page, request }) => {
+    await stubWebGpu(page, true)
+    await page.goto('/lab/peelr')
+
+    await expect(page.getByRole('button', { name: 'Try a demo track' })).toBeVisible()
+
+    const track = await request.get(DEMO_TRACK_URL)
+    expect(track.status()).toBe(200)
+    expect(track.headers()['content-type']).toContain('audio/')
   })
 })

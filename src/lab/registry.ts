@@ -8,7 +8,7 @@ export const EXPERIMENTS: readonly ExperimentMetadata[] = [
     description:
       'Stem separation that runs entirely on your own GPU. Drop in a song, get the drums, bass, vocals and everything else as separate tracks. Nothing is uploaded.',
     createdAt: '2026-08-11',
-    published: false,
+    published: true,
   },
   {
     slug: 'hello-server',
@@ -16,7 +16,7 @@ export const EXPERIMENTS: readonly ExperimentMetadata[] = [
     description:
       'A round trip through every layer of this site: a server function on the Worker, Zod at the boundary, TanStack Query on the client, and Sentry across both.',
     createdAt: '2026-07-21',
-    published: true,
+    published: false,
   },
 ] as const
 
