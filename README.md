@@ -220,3 +220,17 @@ is a variable, since it only identifies the account.
 - **Observability:** [Sentry](https://sentry.io/) for errors on both the client
   and the Worker, and [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)
   (cookieless, so no consent banner).
+
+## License
+
+Copyright (C) 2026 Abraham Menéndez
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. The full text is in [`LICENSE`](./LICENSE).
+
+[`model/peelr/`](./model/peelr) builds on
+[Demucs](https://github.com/facebookresearch/demucs), which Meta released under
+the MIT license; [`model/peelr/LICENSE-demucs`](./model/peelr/LICENSE-demucs)
+keeps that notice.
