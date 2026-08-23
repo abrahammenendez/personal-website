@@ -28,10 +28,12 @@ jobs:
           cache: 'npm'
       - name: Set up semantic-release
         run: |
+          # Pinned: 10.x renders through conventional-changelog-writer@9, but
+          # semantic-release still bundles release-notes-generator on writer@8.
           npm install --no-save \
           semantic-release \
           @semantic-release/exec \
-          conventional-changelog-conventionalcommits
+          conventional-changelog-conventionalcommits@9.3.1
       - name: Publish release and tag
         id: semantic-release
         run: |
