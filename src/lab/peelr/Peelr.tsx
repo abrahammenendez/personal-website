@@ -245,7 +245,7 @@ export function Peelr() {
             <span className="font-medium">Drop a song here</span>
             <span className="text-muted-foreground text-note">
               Up to {MAX_DURATION_SECONDS / 60} minutes. The first run downloads the model, about 90
-              MB.
+              MB. Phones can run out of memory.
             </span>
             <input
               accept="audio/*"
@@ -270,7 +270,10 @@ export function Peelr() {
 
       <output className="flex flex-col gap-2 text-note">
         {phase.name === 'unsupported' ? (
-          <p>This needs WebGPU in Chrome or Edge. Firefox and Safari are not supported yet.</p>
+          <p>
+            peelr needs WebGPU. It works in latest Chrome, Edge and Safari. Firefox has not enabled
+            it yet.
+          </p>
         ) : null}
         {phase.name === 'fetching' ? <p>Fetching the demo track…</p> : null}
         {phase.name === 'decoding' ? <p>Reading the file…</p> : null}

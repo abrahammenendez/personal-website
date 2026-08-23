@@ -24,7 +24,7 @@ test.describe('/lab/peelr', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'peelr' })).toBeVisible()
     await expect(
       page.getByText(
-        'This needs WebGPU in Chrome or Edge. Firefox and Safari are not supported yet.',
+        'peelr needs WebGPU. It works in latest Chrome, Edge and Safari. Firefox has not enabled it yet.',
       ),
     ).toBeVisible()
   })

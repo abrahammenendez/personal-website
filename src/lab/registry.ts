@@ -6,7 +6,7 @@ export const EXPERIMENTS: readonly ExperimentMetadata[] = [
     slug: 'peelr',
     title: 'peelr',
     description:
-      'Stem separation that runs entirely on your own GPU. Drop in a song, get the drums, bass, vocals and everything else as separate tracks. Nothing is uploaded.',
+      'Free stem separation that runs entirely on your own GPU. Drop in a song, get the drums, bass, vocals and everything else as separate tracks. Nothing is uploaded.',
     createdAt: '2026-08-11',
     published: true,
   },
