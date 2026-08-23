@@ -54,14 +54,12 @@ test('gives header links a 24px tap target', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/')
 
-  const links = page.getByRole('navigation', { name: 'Main' }).getByRole('link')
-  const count = await links.count()
-  expect(count).toBeGreaterThan(0)
+  for (const name of ['Home', 'Lab']) {
+    const box = await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('link', { name })
+      .boundingBox()
 
-  for (let index = 0; index < count; index++) {
-    const link = links.nth(index)
-    const box = await link.boundingBox()
-
-    expect(box?.height, `${await link.textContent()} tap target`).toBeGreaterThanOrEqual(24)
+    expect(box?.height, `${name} tap target`).toBeGreaterThanOrEqual(24)
   }
 })

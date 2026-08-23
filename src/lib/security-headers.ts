@@ -61,8 +61,15 @@ const SECURITY_HEADERS: Readonly<Record<string, string>> = {
  * routes, not the prerendered pages.
  */
 export function applySecurityHeaders(response: Response): Response {
+  // Responses from a sub-fetch (TanStack Start's asset/route fallback) carry
+  // immutable Headers, so they must be copied before they can be set.
+  const mutable = new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  })
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    response.headers.set(name, value)
+    mutable.headers.set(name, value)
   }
-  return response
+  return mutable
 }
