@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { PageHeader } from '@/components/PageHeader'
-import { type ExperimentMetadata, findAllPublishedExperiments } from '@/lab'
+import { buildExperimentHref, type ExperimentMetadata, findAllPublishedExperiments } from '@/lab'
 import { buildPageHead, buildPageTitle } from '@/lib/seo'
 
 const TAGLINE = 'Playing with ideas and tech'
@@ -38,14 +38,19 @@ function LabRoute() {
 }
 
 /**
- * A plain anchor, not `<Link>`: every experiment is its own route file and
- * boots into a clean document. `active:` pairs with `hover:`, which Tailwind
- * gates behind `@media (hover:hover)`, leaving touch with no feedback.
+ * A plain anchor, not `<Link>`: an experiment hosted here is its own route file
+ * and boots into a clean document, and an off-site one leaves the SPA.
+ * `active:` pairs with `hover:`, which Tailwind gates behind
+ * `@media (hover:hover)`, leaving touch with no feedback.
  */
 function ExperimentLink({ experiment }: Readonly<{ experiment: ExperimentMetadata }>) {
+  const offSite = experiment.href !== undefined
+
   return (
     <a
-      href={`/lab/${experiment.slug}`}
+      href={buildExperimentHref(experiment)}
+      target={offSite ? '_blank' : undefined}
+      rel={offSite ? 'noopener noreferrer' : undefined}
       className="-mx-3 flex flex-col gap-1 rounded-lg p-3 transition-colors hover:bg-accent hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 active:bg-accent"
     >
       <span className="font-heading font-semibold underline underline-offset-2">

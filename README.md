@@ -67,11 +67,15 @@ model: the Python that exports it and generates its test fixtures. It runs by ha
 ### The registry is the single source of truth
 
 `src/lab/registry.ts` holds one `EXPERIMENTS` array, and that declaration drives
-the `/lab` index, each experiment page's `<head>`, and the sitemap. **Adding an
-experiment is two edits:**
+the `/lab` index, each experiment page's `<head>`, and the sitemap. Declaration
+order is the order the index renders. **Adding an experiment is two edits:**
 
 1. Add an entry to [`src/lab/registry.ts`](./src/lab/registry.ts).
 2. Add a route at `src/routes/lab/<slug>.tsx` that renders it.
+
+An experiment that lives off-site sets `href` and skips step 2: `/lab` links
+straight out to it, and it has no page here to prerender or to list in the
+sitemap.
 
 `src/lab/hello-server/` is a working reference: a server function on the Worker,
 Zod validation at the boundary, TanStack Query on the client, and Sentry across

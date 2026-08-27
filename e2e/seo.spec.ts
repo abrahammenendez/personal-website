@@ -42,7 +42,7 @@ test.describe('per-page metadata', () => {
 })
 
 test.describe('crawlable surface', () => {
-  test('lists every published experiment in the sitemap', async ({ request }) => {
+  test('lists every experiment hosted here in the sitemap', async ({ request }) => {
     const sitemap = await request.get('/sitemap.xml')
     expect(sitemap.ok()).toBe(true)
 
@@ -50,8 +50,8 @@ test.describe('crawlable surface', () => {
     expect(xml).toContain(`<loc>${SITE_URL}/`)
     expect(xml).toContain(`<loc>${SITE_URL}/lab</loc>`)
 
-    for (const experiment of findAllPublishedExperiments()) {
-      expect(xml).toContain(`<loc>${SITE_URL}/lab/${experiment.slug}</loc>`)
+    for (const { slug } of findAllPublishedExperiments().filter(({ href }) => !href)) {
+      expect(xml).toContain(`<loc>${SITE_URL}/lab/${slug}</loc>`)
     }
   })
 

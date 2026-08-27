@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
 // Read from the registry, so adding an experiment does not fail these tests.
-import { findAllPublishedExperiments } from '@/lab'
+import { buildExperimentHref, findAllPublishedExperiments } from '@/lab'
 
 const EXPERIMENTS = findAllPublishedExperiments()
 
 test.describe('/lab', () => {
-  test('renders every published experiment, newest first', async ({ page }) => {
+  test('renders every published experiment in the order they are declared', async ({ page }) => {
     await page.goto('/lab')
 
     await expect(
@@ -18,13 +18,27 @@ test.describe('/lab', () => {
     const hrefs = await entries
       .locator('a')
       .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
-    expect(hrefs).toEqual(EXPERIMENTS.map((experiment) => `/lab/${experiment.slug}`))
+    expect(hrefs).toEqual(EXPERIMENTS.map(buildExperimentHref))
 
     for (const experiment of EXPERIMENTS) {
-      const entry = entries.filter({ has: page.locator(`a[href="/lab/${experiment.slug}"]`) })
+      const entry = entries.filter({
+        has: page.locator(`a[href="${buildExperimentHref(experiment)}"]`),
+      })
 
       await expect(entry).toContainText(experiment.title)
       await expect(entry).toContainText(experiment.description)
+    }
+  })
+
+  test('opens an off-site experiment in a new tab', async ({ page }) => {
+    await page.goto('/lab')
+
+    for (const experiment of EXPERIMENTS) {
+      if (!experiment.href) continue
+
+      const link = page.getByRole('main').locator(`a[href="${experiment.href}"]`)
+      await expect(link).toHaveAttribute('target', '_blank')
+      await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     }
   })
 

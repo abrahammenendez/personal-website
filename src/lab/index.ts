@@ -1,6 +1,7 @@
 export { buildExperimentPageHead } from './head'
 export {
   assertExperimentExists,
+  buildExperimentHref,
   EXPERIMENTS,
   findAllPublishedExperiments,
   findExperiment,
