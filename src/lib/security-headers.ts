@@ -56,7 +56,7 @@ const SECURITY_HEADERS: Readonly<Record<string, string>> = {
 }
 
 /**
- * Note that Cloudflare serves prerendered assets from the edge cache without
+ * Cloudflare serves prerendered assets from the edge cache without
  * invoking the Worker, so these reach server-function calls and unmatched
  * routes, not the prerendered pages.
  */

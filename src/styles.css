@@ -97,7 +97,7 @@
 
 /* Raised surfaces step up in lightness from --background: card and popover by
  * 0.06, muted/secondary/accent by 0.124. Those gaps are what separate a card
- * from the page, so keep them if you move the background. */
+ * from the page, whatever --background itself is set to. */
 .dark {
   color-scheme: dark;
 

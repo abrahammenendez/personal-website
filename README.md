@@ -70,17 +70,17 @@ model: the Python that exports it and generates its test fixtures. It runs by ha
 the `/lab` index, each experiment page's `<head>`, and the sitemap. Declaration
 order is the order the index renders. **Adding an experiment is two edits:**
 
-1. Add an entry to [`src/lab/registry.ts`](./src/lab/registry.ts).
-2. Add a route at `src/routes/lab/<slug>.tsx` that renders it.
+1. An entry in [`src/lab/registry.ts`](./src/lab/registry.ts).
+2. A route at `src/routes/lab/<slug>.tsx` that renders it.
 
 An experiment that lives off-site sets `href` and skips step 2: `/lab` links
 straight out to it, and it has no page here to prerender or to list in the
 sitemap.
 
-`src/lab/hello-server/` is a working reference: a server function on the Worker,
-Zod validation at the boundary, TanStack Query on the client, and Sentry across
-both. Copy its shape: a pure, tested `logic.ts`, an `api.ts` holding the server
-functions, and a component that consumes them.
+`src/lab/hello-server/` is the smallest end-to-end slice: a server function on
+the Worker, Zod validation at the boundary, TanStack Query on the client, and
+Sentry across both. It splits three ways: a pure, tested `logic.ts`, an
+`api.ts` holding the server functions, and a component that consumes them.
 
 `src/lab/peelr/` is the other end of the range: stem separation running on the
 visitor's GPU, so the arithmetic that paid services rent servers for happens in
@@ -148,12 +148,13 @@ before first paint, so there is no flash of the wrong theme. An absent
 the script's `matchMedia` listener keeps following until the visitor picks a
 side.
 
-Consequences before touching it:
+Consequences:
 
-- **Prefer the `dark:` variant over reading the scheme in React.** `ThemeToggle`
-  renders both glyphs and lets CSS pick one, so the prerendered HTML never
-  guesses. `ui/sonner.tsx` is the one exception, because sonner needs the value
-  as a prop, and it subscribes via a `MutationObserver` on the class.
+- **The `dark:` variant does the work, not a scheme read in React.**
+  `ThemeToggle` renders both glyphs and lets CSS pick one, so the prerendered
+  HTML never guesses. `ui/sonner.tsx` is the one exception, because sonner
+  needs the value as a prop, and it subscribes via a `MutationObserver` on the
+  class.
 - Cookies and server functions are the wrong tool here, however often
   they're recommended for TanStack Start. Cloudflare serves the prerendered
   files from the edge without invoking the Worker, so per-request theming has no
@@ -168,10 +169,10 @@ Consequences before touching it:
 
 ### Conventions
 
-- **React Compiler is on.** Don't hand-write `useMemo`/`useCallback`/`memo`;
-  compute derived values during render.
-- **No `useEffect`** for data fetching, derived state, or event responses. It is
-  for real external subscriptions with cleanup.
+- **React Compiler is on**, so there are no hand-written
+  `useMemo`/`useCallback`/`memo`; derived values are computed during render.
+- **`useEffect` is reserved for real external subscriptions with cleanup**, not
+  data fetching, derived state or event responses.
 - **`src/components/ui/**` is vendored**, added via the shadcn CLI and
   regenerated on updates. Biome formats but does not lint it. App code
   everywhere else is strictly linted.
