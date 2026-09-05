@@ -337,8 +337,7 @@ export function Peelr() {
           Demucs
         </a>{' '}
         (htdemucs), copyright Meta Platforms, Inc., MIT licensed. Its weights are converted to ONNX
-        and served from this site. Export, transforms and WebGPU pipeline made by me (with help from
-        Claude).
+        and served from this site. Export, transforms and WebGPU pipeline made by Claude and me.
       </p>
     </section>
   )

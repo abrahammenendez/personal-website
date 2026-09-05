@@ -65,7 +65,7 @@ function Home() {
 
       <p>
         As I strongly believe in giving back, you can find me trying to be a helpful Mentor at{' '}
-        <ExternalLink className="text-link-exercism" href="https://exercism.com/">
+        <ExternalLink className="text-link-exercism" href="https://exercism.org/">
           Exercism
         </ExternalLink>
         , a not-for-profit organization dedicated to teaching programming to anyone eager to learn.
