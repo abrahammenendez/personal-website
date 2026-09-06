@@ -7,7 +7,7 @@ permissions:
   contents: read
   pull-requests: read
 jobs:
-  hygiene:
+  lint:
     name: Secrets and commit messages
     runs-on: ubuntu-latest
     steps:
