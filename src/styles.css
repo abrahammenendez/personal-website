@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/eb-garamond";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/buenard";
 
 /* `:where` holds `dark:` utilities at zero specificity, so they never outrank
  * the light utility they pair with. */
@@ -20,8 +20,8 @@
   --text-note: 0.95em;
   --text-meta: 0.8em;
 
-  --font-serif: "EB Garamond Variable", "Hoefler Text", "Times New Roman", serif;
-  --font-sans: "Geist Variable", sans-serif;
+  --font-serif: "Buenard Variable", "Hoefler Text", "Times New Roman", serif;
+  --font-sans: "Inter Variable", sans-serif;
   --font-heading: var(--font-sans);
 
   /* One colour per link on the home page. */

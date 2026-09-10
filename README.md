@@ -164,7 +164,7 @@ Consequences:
   silently override the `bg-background` utility meant to win.
 - `--muted-foreground` is tuned on APCA `Lc` rather than the WCAG 2 ratio, which
   ignores type size, weight and polarity and flatters light-on-dark. Body copy
-  is set in EB Garamond, a light-stroked serif that a bare WCAG pass leaves
+  is set in Buenard, a serif whose reading-size strokes a bare WCAG pass leaves
   looking washed out.
 
 ### Conventions
