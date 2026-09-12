@@ -31,10 +31,13 @@
       }
     ],
     [
+      "@semantic-release/github",
+      { "successComment": false, "failComment": false, "releasedLabels": false }
+    ],
+    [
       "@semantic-release/exec",
       {
         "prepareCmd": "npm version ${nextRelease.version} --no-git-tag-version",
-        "publishCmd": "gh release create v${nextRelease.version} --title 'v${nextRelease.version}' --notes '${nextRelease.notes}'",
         "successCmd": "echo ${nextRelease.version} > .new-semantic-release-version"
       }
     ]

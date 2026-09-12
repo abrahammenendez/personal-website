@@ -46,7 +46,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       new-release-published: ${{ steps.semantic-release.outputs.new-release-published }}
   deploy:
