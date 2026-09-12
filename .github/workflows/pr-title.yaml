@@ -1,0 +1,34 @@
+name: Check PR title
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  title:
+    name: Title
+    # Dependabot writes its titles from its commit-message prefix and names dependencies
+    # verbatim, so a version like 1.0.0-RC1 would fail the lowercase rule. A skipped job
+    # still satisfies the required check.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      # Squash merging makes the title, not the branch's commits, the commit on main, and
+      # the title is what semantic-release reads. It arrives through the environment so a
+      # crafted title cannot run as shell.
+      - name: Lint the title
+        run: printf '%s\n' "$TITLE" | npx commitlint
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
