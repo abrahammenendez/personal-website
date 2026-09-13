@@ -9,6 +9,11 @@ updates:
       prefix: chore
       include: scope
     groups:
+      # @vitest/coverage-v8 pins vitest to its exact version, so the two only install when
+      # they move together, majors included. Listed first because a dependency joins the
+      # first group it matches.
+      vitest:
+        patterns: ['vitest', '@vitest/*']
       npm:
         patterns: ['*']
         update-types: [minor, patch]
