@@ -1,0 +1,47 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      npm:
+        patterns: ['*']
+        update-types: [minor, patch]
+      npm-security:
+        applies-to: security-updates
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      github-actions:
+        patterns: ['*']
+        update-types: [minor, patch]
+      github-actions-security:
+        applies-to: security-updates
+        patterns: ['*']
+
+  # Dependabot has no security updates for OpenTofu, so only version updates are grouped.
+  - package-ecosystem: opentofu
+    directory: /iac
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      opentofu:
+        patterns: ['*']
+        update-types: [minor, patch]
