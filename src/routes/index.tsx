@@ -27,7 +27,7 @@ function Home() {
       <PageHeader title="Hi!" />
 
       <p>
-        I'm Abraham Menéndez, a 32-year-old Spanish software developer based in Amsterdam, The
+        I'm Abraham Menéndez, a 33-year-old Spanish software developer based in Amsterdam, The
         Netherlands.
       </p>
 
