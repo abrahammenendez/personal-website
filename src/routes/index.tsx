@@ -64,7 +64,8 @@ function Home() {
       </p>
 
       <p>
-        As I strongly believe in giving back, you can find me trying to be a helpful Mentor at{' '}
+        As I strongly believe in giving back, you might have found me trying to be a helpful Mentor
+        at{' '}
         <ExternalLink className="text-link-exercism" href="https://exercism.org/">
           Exercism
         </ExternalLink>
