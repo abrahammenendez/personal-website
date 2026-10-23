@@ -22,6 +22,14 @@ export const EXPERIMENTS: readonly ExperimentMetadata[] = [
     published: true,
   },
   {
+    slug: 'agent-skills',
+    title: 'agent skills',
+    description: 'My own agent skills.',
+    createdAt: '2026-09-27',
+    href: 'https://www.skills.sh/abrahammenendez/ai',
+    published: true,
+  },
+  {
     slug: 'puzdrop',
     title: 'puzdrop',
     description:
