@@ -16,7 +16,8 @@ export const EXPERIMENTS: readonly ExperimentMetadata[] = [
   {
     slug: 'espeyu',
     title: 'espeyu',
-    description: 'Modern, privacy-first, fast mirror for your phone. Free, open-source, no ads.',
+    description:
+      'A modern, privacy-first, full-screen true mirror for your phone. Free, no ads, open source.',
     createdAt: '2026-09-28',
     href: 'https://github.com/abrahammenendez/espeyu',
     published: true,
