@@ -19,9 +19,8 @@ const requestHandlerWithSecurityHeaders = {
 }
 
 /**
- * Custom Worker entry, pointed at by `main` in `wrangler.jsonc`. The DSN is
- * only supplied in production, so `vite dev` (Worker under miniflare) never
- * reports.
+ * Custom Worker entry, pointed at by `main` in `wrangler.jsonc`. Without a DSN,
+ * which only `SENTRY_ENABLED` supplies, the SDK sends nothing.
  */
 export default withSentry(
   () => ({
