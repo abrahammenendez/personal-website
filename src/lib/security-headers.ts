@@ -43,9 +43,8 @@ const CONTENT_SECURITY_POLICY = [
 
 const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'Content-Security-Policy': CONTENT_SECURITY_POLICY,
-  // 2 years, all subdomains, eligible for the preload list. Submitting to
-  // hstspreload.org is a separate manual step this header does not do.
-  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  // No Strict-Transport-Security: the zone's HSTS setting sends it on every
+  // response, prerendered pages included, and overwrites any value set here.
   'Cross-Origin-Opener-Policy': 'same-origin',
   // Kept alongside CSP's frame-ancestors for browsers that predate it.
   'X-Frame-Options': 'DENY',
