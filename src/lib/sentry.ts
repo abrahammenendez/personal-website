@@ -11,5 +11,8 @@ export const SENTRY_DSN =
 
 export const SENTRY_TRACES_SAMPLE_RATE = 0.1
 
-/** Only report from production, so local development never spends the quota. */
-export const SENTRY_ENABLED = import.meta.env.PROD
+/**
+ * Only the deploy job sets this. `import.meta.env.PROD` is not enough: the
+ * end-to-end suite runs a production build too.
+ */
+export const SENTRY_ENABLED = import.meta.env.VITE_SENTRY_ENABLED === 'true'

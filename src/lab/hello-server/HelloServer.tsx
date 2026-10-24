@@ -118,8 +118,8 @@ function WriteCard() {
 }
 
 function triggerTestError() {
-  // Captured rather than thrown, so the page never crashes. A no-op in
-  // development, where Sentry does not initialise.
+  // Captured rather than thrown, so the page never crashes. A no-op unless
+  // `SENTRY_ENABLED`, as Sentry does not initialise.
   Sentry.captureException(new Error('hello-server: intentional test error'))
   toast.success('Sent a test error to Sentry')
 }
